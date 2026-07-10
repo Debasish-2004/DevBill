@@ -1,0 +1,112 @@
+{% extends "owner_layout.html" %}
+
+{% block title %}Add Category{% endblock %}
+
+{% block content %}
+<div class="max-w-2xl mx-auto">
+
+    <!-- Page Header -->
+    <div class="mb-8">
+        <h1 class="text-2xl font-bold text-white">Add Category</h1>
+        <p class="text-sm text-slate-400 mt-1">Create a new product category with optional subcategories.</p>
+    </div>
+
+    <!-- Messages -->
+    {% if messages %}
+    <div class="mb-6 space-y-2">
+        {% for message in messages %}
+        <div class="px-4 py-3 rounded-lg text-sm font-medium
+            {% if message.tags == 'success' %}bg-emerald-500/10 border border-emerald-500/30 text-emerald-400
+            {% elif message.tags == 'error' %}bg-rose-500/10 border border-rose-500/30 text-rose-400
+            {% else %}bg-sky-500/10 border border-sky-500/30 text-sky-400{% endif %}">
+            {{ message }}
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    <!-- Form Card -->
+    <form method="POST" id="category-form" class="bg-slate-900/60 backdrop-blur-sm border border-slate-800 rounded-2xl p-6 shadow-xl shadow-indigo-950/10">
+        {% csrf_token %}
+
+        <!-- Category Name -->
+        <div class="mb-6">
+            <label for="name" class="block text-sm font-medium text-slate-300 mb-2">Category Name</label>
+            <input type="text" name="name" id="name" required placeholder="e.g. PVC, CPVC, GI Fittings..."
+                class="w-full rounded-lg border border-slate-700 bg-slate-950/50 px-4 py-2.5 text-sm text-slate-100 placeholder:text-slate-500 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 transition">
+        </div>
+
+        <!-- Has Subcategories Toggle -->
+        <div class="mb-6 flex items-center gap-3">
+            <label class="relative inline-flex items-center cursor-pointer">
+                <input type="checkbox" name="has_subcategories" id="has-subcategories-toggle" class="sr-only peer">
+                <div class="w-11 h-6 bg-slate-700 peer-focus:ring-2 peer-focus:ring-indigo-500/30 rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-slate-400 after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-indigo-600 peer-checked:after:bg-white"></div>
+            </label>
+            <span class="text-sm font-medium text-slate-300">Enable subcategories</span>
+        </div>
+
+        <!-- Subcategories Section (hidden by default) -->
+        <div id="subcategories-section" class="hidden mb-6 p-4 bg-slate-800/40 border border-slate-700/50 rounded-xl">
+            <div class="flex items-center justify-between mb-3">
+                <label class="text-sm font-medium text-slate-300">Subcategories</label>
+                <button type="button" id="add-sub-btn"
+                    class="text-xs font-medium text-indigo-400 hover:text-indigo-300 flex items-center gap-1 transition">
+                    <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+                    </svg>
+                    Add More
+                </button>
+            </div>
+            <div id="sub-list" class="space-y-2">
+                <div class="flex gap-2 items-center sub-row">
+                    <input type="text" name="subcategory_names" placeholder="Subcategory name"
+                        class="flex-1 rounded-lg border border-slate-700 bg-slate-950/50 px-3 py-2 text-sm text-slate-100 placeholder:text-slate-500 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 transition">
+                    <button type="button" onclick="this.closest('.sub-row').remove()"
+                        class="p-2 text-slate-500 hover:text-rose-400 hover:bg-rose-500/10 rounded-lg transition">
+                        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12" />
+                        </svg>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Submit -->
+        <button type="submit"
+            class="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-semibold text-sm py-2.5 px-4 rounded-lg shadow-lg shadow-indigo-600/20 hover:shadow-indigo-500/30 transition-all duration-200">
+            Create Category
+        </button>
+    </form>
+
+    <!-- Quick Link -->
+    <div class="mt-6 text-center">
+        <a href="{% url 'edit_category_list' %}" class="text-sm text-slate-400 hover:text-indigo-400 transition">← View all categories</a>
+    </div>
+</div>
+
+<script>
+const toggle = document.getElementById('has-subcategories-toggle');
+const subSection = document.getElementById('subcategories-section');
+const addSubBtn = document.getElementById('add-sub-btn');
+const subList = document.getElementById('sub-list');
+
+toggle.addEventListener('change', () => {
+    subSection.classList.toggle('hidden', !toggle.checked);
+});
+
+addSubBtn.addEventListener('click', () => {
+    const row = document.createElement('div');
+    row.className = 'flex gap-2 items-center sub-row';
+    row.innerHTML = `
+        <input type="text" name="subcategory_names" placeholder="Subcategory name"
+            class="flex-1 rounded-lg border border-slate-700 bg-slate-950/50 px-3 py-2 text-sm text-slate-100 placeholder:text-slate-500 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 transition">
+        <button type="button" onclick="this.closest('.sub-row').remove()"
+            class="p-2 text-slate-500 hover:text-rose-400 hover:bg-rose-500/10 rounded-lg transition">
+            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12" />
+            </svg>
+        </button>`;
+    subList.appendChild(row);
+});
+</script>
+{% endblock %}

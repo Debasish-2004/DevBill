@@ -20,9 +20,9 @@
 </div>
                 <div class="hidden lg:flex items-center space-x-6 ml-auto">
                     <nav class="flex items-center space-x-1">
-                        <a href="#" class="text-sm font-medium text-slate-300 hover:text-sky-400 px-3 py-2 rounded-lg hover:bg-slate-800/50 transition">Add Product</a>
-                        <a href="#" class="text-sm font-medium text-slate-300 hover:text-indigo-400 px-3 py-2 rounded-lg hover:bg-slate-800/50 transition">Edit Product</a>
-                        <a href="#" class="text-sm font-medium text-slate-300 hover:text-emerald-400 px-3 py-2 rounded-lg hover:bg-slate-800/50 transition">Customer</a>
+                        <a href="{% url 'add_product' %}" class="text-sm font-medium text-slate-300 hover:text-sky-400 px-3 py-2 rounded-lg hover:bg-slate-800/50 transition">Add Product</a>
+                        <a href="{% url 'edit_product_list' %}" class="text-sm font-medium text-slate-300 hover:text-indigo-400 px-3 py-2 rounded-lg hover:bg-slate-800/50 transition">Edit Product</a>
+                        <a href="{% url 'edit_category_list' %}" class="text-sm font-medium text-slate-300 hover:text-emerald-400 px-3 py-2 rounded-lg hover:bg-slate-800/50 transition">Categories</a>
                         <span class="text-slate-700 px-1">|</span>
                         <a href="#" class="text-sm font-medium text-rose-400 hover:text-rose-300 px-3 py-2 rounded-lg hover:bg-rose-500/10 transition">Logout</a>
                     </nav>
@@ -68,9 +68,9 @@
                     </div>
 
                     <nav class="space-y-2">
-                        <a href="#" class="block text-base font-medium text-slate-200 hover:text-sky-400 hover:bg-slate-800/50 px-3 py-2.5 rounded-lg transition">Add Product</a>
-                        <a href="#" class="block text-base font-medium text-slate-200 hover:text-indigo-400 hover:bg-slate-800/50 px-3 py-2.5 rounded-lg transition">Edit Product</a>
-                        <a href="#" class="block text-base font-medium text-slate-200 hover:text-emerald-400 hover:bg-slate-800/50 px-3 py-2.5 rounded-lg transition">Customer</a>
+                        <a href="{% url 'add_product' %}" class="block text-base font-medium text-slate-200 hover:text-sky-400 hover:bg-slate-800/50 px-3 py-2.5 rounded-lg transition">Add Product</a>
+                        <a href="{% url 'edit_product_list' %}" class="block text-base font-medium text-slate-200 hover:text-indigo-400 hover:bg-slate-800/50 px-3 py-2.5 rounded-lg transition">Edit Product</a>
+                        <a href="{% url 'edit_category_list' %}" class="block text-base font-medium text-slate-200 hover:text-emerald-400 hover:bg-slate-800/50 px-3 py-2.5 rounded-lg transition">Categories</a>
                         <hr class="border-slate-800 my-4">
                         <a href="#" class="block text-base font-semibold text-rose-400 hover:bg-rose-500/10 px-3 py-2.5 rounded-lg transition">Logout</a>
                     </nav>

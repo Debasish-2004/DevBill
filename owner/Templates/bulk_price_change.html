@@ -1,0 +1,114 @@
+{% extends "owner_layout.html" %}
+
+{% block title %}Bulk Price Change{% endblock %}
+
+{% block content %}
+<div class="max-w-2xl mx-auto">
+
+    <!-- Page Header -->
+    <div class="mb-8">
+        <a href="{% url 'edit_category_list' %}" class="text-sm text-slate-400 hover:text-indigo-400 transition mb-2 inline-block">← Back to categories</a>
+        <h1 class="text-2xl font-bold text-white">Bulk Price Change</h1>
+        <p class="text-sm text-slate-400 mt-1">Increase or decrease prices for an entire category or subcategory by percentage.</p>
+    </div>
+
+    <!-- Messages -->
+    {% if messages %}
+    <div class="mb-6 space-y-2">
+        {% for message in messages %}
+        <div class="px-4 py-3 rounded-lg text-sm font-medium
+            {% if message.tags == 'success' %}bg-emerald-500/10 border border-emerald-500/30 text-emerald-400
+            {% elif message.tags == 'error' %}bg-rose-500/10 border border-rose-500/30 text-rose-400
+            {% elif message.tags == 'warning' %}bg-amber-500/10 border border-amber-500/30 text-amber-400
+            {% else %}bg-sky-500/10 border border-sky-500/30 text-sky-400{% endif %}">
+            {{ message }}
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    <!-- Form Card -->
+    <form method="POST" class="bg-slate-900/60 backdrop-blur-sm border border-slate-800 rounded-2xl p-6 shadow-xl shadow-indigo-950/10">
+        {% csrf_token %}
+
+        <!-- Category -->
+        <div class="mb-5">
+            <label for="category" class="block text-sm font-medium text-slate-300 mb-2">Category</label>
+            <select name="category" id="bulk-category" required
+                class="w-full rounded-lg border border-slate-700 bg-slate-950/50 px-4 py-2.5 text-sm text-slate-100 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 transition">
+                <option value="">Select category</option>
+                {% for cat in categories %}
+                <option value="{{ cat.id }}" data-has-subs="{{ cat.has_subcategories|yesno:'true,false' }}">{{ cat.name }}</option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <!-- Subcategory (dynamic) -->
+        <div id="bulk-sub-wrapper" class="hidden mb-5">
+            <label for="subcategory" class="block text-sm font-medium text-slate-300 mb-2">Subcategory (optional — leave empty for entire category)</label>
+            <select name="subcategory" id="bulk-subcategory"
+                class="w-full rounded-lg border border-slate-700 bg-slate-950/50 px-4 py-2.5 text-sm text-slate-100 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 transition">
+                <option value="">All subcategories</option>
+            </select>
+        </div>
+
+        <!-- Percentage -->
+        <div class="mb-5">
+            <label for="percentage" class="block text-sm font-medium text-slate-300 mb-2">Percentage Change (%)</label>
+            <div class="relative">
+                <input type="number" name="percentage" id="percentage" required step="0.01" placeholder="e.g. 5 for +5%, -3 for -3%"
+                    class="w-full rounded-lg border border-slate-700 bg-slate-950/50 px-4 py-2.5 text-sm text-slate-100 placeholder:text-slate-500 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 transition pr-10">
+                <span class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 text-sm">%</span>
+            </div>
+            <p class="text-xs text-slate-500 mt-1.5">Positive = increase, negative = decrease. Prices won't go below minimum selling price.</p>
+        </div>
+
+        <!-- Info box -->
+        <div class="mb-6 p-3 bg-amber-500/5 border border-amber-500/20 rounded-lg">
+            <p class="text-xs text-amber-400/80">
+                <svg class="w-3.5 h-3.5 inline-block mr-1" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126ZM12 15.75h.007v.008H12v-.008Z" />
+                </svg>
+                This action will update the <strong>current price</strong> of all products in the selected scope. This cannot be undone.
+            </p>
+        </div>
+
+        <!-- Submit -->
+        <button type="submit"
+            class="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-semibold text-sm py-2.5 px-4 rounded-lg shadow-lg shadow-indigo-600/20 hover:shadow-indigo-500/30 transition-all duration-200">
+            Apply Price Change
+        </button>
+    </form>
+</div>
+
+<script>
+const catSelect = document.getElementById('bulk-category');
+const subWrapper = document.getElementById('bulk-sub-wrapper');
+const subSelect = document.getElementById('bulk-subcategory');
+
+if (catSelect) {
+    catSelect.addEventListener('change', async () => {
+        const catId = catSelect.value;
+        if (!catId) {
+            subWrapper.classList.add('hidden');
+            subSelect.innerHTML = '<option value="">All subcategories</option>';
+            return;
+        }
+
+        const res = await fetch(`{% url 'get_subcategories' %}?category_id=${catId}`);
+        const data = await res.json();
+
+        if (data.has_subcategories && data.subcategories.length > 0) {
+            subSelect.innerHTML = '<option value="">All subcategories</option>';
+            data.subcategories.forEach(sub => {
+                subSelect.innerHTML += `<option value="${sub.id}">${sub.name}</option>`;
+            });
+            subWrapper.classList.remove('hidden');
+        } else {
+            subWrapper.classList.add('hidden');
+            subSelect.innerHTML = '<option value="">All subcategories</option>';
+        }
+    });
+}
+</script>
+{% endblock %}

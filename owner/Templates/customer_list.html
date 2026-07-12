@@ -1,0 +1,74 @@
+{% extends "owner_layout.html" %}
+
+{% block title %}Customers{% endblock %}
+
+{% block content %}
+<div class="max-w-5xl mx-auto">
+
+    <!-- Header -->
+    <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6">
+        <div>
+            <h1 class="text-2xl font-bold text-white">Customers</h1>
+            <p class="text-sm text-slate-400 mt-1">Everyone who has purchased, and what they spent.</p>
+        </div>
+        <a href="{% url 'paylater_list' %}" class="inline-flex items-center gap-2 bg-amber-500/10 border border-amber-500/30 text-amber-400 hover:bg-amber-500/20 text-sm font-semibold px-4 py-2 rounded-lg transition">
+            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" /></svg>
+            Pay Later
+        </a>
+    </div>
+
+    <!-- Period filter -->
+    <div class="flex flex-wrap gap-2 mb-6">
+        {% for value, label in period_options %}
+        <a href="?period={{ value }}"
+           class="px-4 py-1.5 rounded-lg text-sm font-medium border transition
+           {% if period == value %}bg-indigo-600 border-indigo-500 text-white{% else %}bg-slate-900/60 border-slate-800 text-slate-300 hover:border-slate-700{% endif %}">
+            {{ label }}
+        </a>
+        {% endfor %}
+    </div>
+
+    {% if customers %}
+    <div class="bg-slate-900/60 border border-slate-800 rounded-xl overflow-hidden">
+        <div class="hidden sm:grid grid-cols-12 gap-3 px-5 py-3 bg-slate-950/40 border-b border-slate-800 text-[11px] font-semibold uppercase tracking-wide text-slate-500">
+            <div class="col-span-4">Customer</div>
+            <div class="col-span-2 text-center">Bills</div>
+            <div class="col-span-2 text-right">Spent</div>
+            <div class="col-span-2 text-right">Due</div>
+            <div class="col-span-2 text-right">Last</div>
+        </div>
+        {% for c in customers %}
+        <a href="{% url 'customer_detail' c.pk %}" class="grid grid-cols-12 gap-3 items-center px-5 py-4 border-b border-slate-800/70 last:border-0 hover:bg-slate-800/30 transition">
+            <div class="col-span-12 sm:col-span-4 flex items-center gap-3">
+                <div class="h-9 w-9 rounded-full bg-indigo-500/10 text-indigo-400 flex items-center justify-center text-sm font-bold flex-shrink-0">
+                    {{ c.display_name|first|upper }}
+                </div>
+                <div class="min-w-0">
+                    <p class="text-sm font-semibold text-white truncate">{{ c.display_name }}</p>
+                    <p class="text-xs text-slate-500">{{ c.phone }}</p>
+                </div>
+            </div>
+            <div class="col-span-4 sm:col-span-2 sm:text-center">
+                <span class="sm:hidden text-[11px] uppercase text-slate-500">Bills </span>
+                <span class="text-sm text-slate-300">{{ c.bill_count }}</span>
+            </div>
+            <div class="col-span-4 sm:col-span-2 text-right">
+                <span class="sm:hidden text-[11px] uppercase text-slate-500">Spent </span>
+                <span class="text-sm font-medium text-emerald-400">₹{{ c.spent|default:0 }}</span>
+            </div>
+            <div class="col-span-4 sm:col-span-2 text-right">
+                {% if c.due %}<span class="text-sm font-medium text-rose-400">₹{{ c.due }}</span>{% else %}<span class="text-sm text-slate-600">—</span>{% endif %}
+            </div>
+            <div class="col-span-12 sm:col-span-2 text-right">
+                <span class="text-xs text-slate-500">{{ c.last_purchase|date:"d M Y" }}</span>
+            </div>
+        </a>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="bg-slate-900/60 border border-slate-800 rounded-2xl p-12 text-center">
+        <p class="text-slate-400 text-sm">No customers in this period.</p>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

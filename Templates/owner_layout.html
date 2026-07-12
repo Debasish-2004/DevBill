@@ -14,7 +14,7 @@
             <div class="flex items-center justify-between h-16 gap-4">
                 
 <div class="flex-shrink-0">
-    <a href="#" class="text-xl font-bold tracking-tight text-white hover:text-slate-200 transition duration-150">
+    <a href="{% url 'employee_home' %}" class="text-xl font-bold tracking-tight text-white hover:text-slate-200 transition duration-150">
         Lingara Sanitary
     </a>
 </div>
@@ -23,6 +23,8 @@
                         <a href="{% url 'add_product' %}" class="text-sm font-medium text-slate-300 hover:text-sky-400 px-3 py-2 rounded-lg hover:bg-slate-800/50 transition">Add Product</a>
                         <a href="{% url 'edit_product_list' %}" class="text-sm font-medium text-slate-300 hover:text-indigo-400 px-3 py-2 rounded-lg hover:bg-slate-800/50 transition">Edit Product</a>
                         <a href="{% url 'edit_category_list' %}" class="text-sm font-medium text-slate-300 hover:text-emerald-400 px-3 py-2 rounded-lg hover:bg-slate-800/50 transition">Categories</a>
+                        <a href="{% url 'customer_list' %}" class="text-sm font-medium text-slate-300 hover:text-indigo-400 px-3 py-2 rounded-lg hover:bg-slate-800/50 transition">Customers</a>
+                        <a href="{% url 'paylater_list' %}" class="text-sm font-medium text-slate-300 hover:text-amber-400 px-3 py-2 rounded-lg hover:bg-slate-800/50 transition">Pay Later</a>
                         <span class="text-slate-700 px-1">|</span>
                         <a href="#" class="text-sm font-medium text-rose-400 hover:text-rose-300 px-3 py-2 rounded-lg hover:bg-rose-500/10 transition">Logout</a>
                     </nav>
@@ -71,6 +73,8 @@
                         <a href="{% url 'add_product' %}" class="block text-base font-medium text-slate-200 hover:text-sky-400 hover:bg-slate-800/50 px-3 py-2.5 rounded-lg transition">Add Product</a>
                         <a href="{% url 'edit_product_list' %}" class="block text-base font-medium text-slate-200 hover:text-indigo-400 hover:bg-slate-800/50 px-3 py-2.5 rounded-lg transition">Edit Product</a>
                         <a href="{% url 'edit_category_list' %}" class="block text-base font-medium text-slate-200 hover:text-emerald-400 hover:bg-slate-800/50 px-3 py-2.5 rounded-lg transition">Categories</a>
+                        <a href="{% url 'customer_list' %}" class="block text-base font-medium text-slate-200 hover:text-indigo-400 hover:bg-slate-800/50 px-3 py-2.5 rounded-lg transition">Customers</a>
+                        <a href="{% url 'paylater_list' %}" class="block text-base font-medium text-slate-200 hover:text-amber-400 hover:bg-slate-800/50 px-3 py-2.5 rounded-lg transition">Pay Later</a>
                         <hr class="border-slate-800 my-4">
                         <a href="#" class="block text-base font-semibold text-rose-400 hover:bg-rose-500/10 px-3 py-2.5 rounded-lg transition">Logout</a>
                     </nav>

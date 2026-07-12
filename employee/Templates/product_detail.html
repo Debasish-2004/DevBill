@@ -1,0 +1,133 @@
+{% extends "employee_layout.html" %}
+
+{% block title %}{{ product.name }}{% endblock %}
+
+{% block content %}
+<div class="max-w-5xl mx-auto">
+
+    <!-- Breadcrumb -->
+    <nav class="flex items-center gap-1.5 text-sm text-slate-400 dark:text-slate-500 mb-6 flex-wrap">
+        <a href="{% url 'product_categories' %}" class="hover:text-indigo-600 transition">Products</a>
+        <span>/</span>
+        <a href="{% url 'category_detail' product.category.pk %}" class="hover:text-indigo-600 transition">{{ product.category.name }}</a>
+        {% if product.subcategory %}
+        <span>/</span>
+        <a href="{% url 'subcategory_detail' product.subcategory.pk %}" class="hover:text-indigo-600 transition">{{ product.subcategory.name }}</a>
+        {% endif %}
+        <span>/</span>
+        <span class="text-slate-700 dark:text-slate-300 font-medium">{{ product.name }}</span>
+    </nav>
+
+    <!-- Messages -->
+    {% if messages %}
+    <div class="mb-6 space-y-2">
+        {% for message in messages %}
+        <div class="px-4 py-3 rounded-lg text-sm font-medium
+            {% if message.tags == 'success' %}bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-200 dark:border-emerald-500/30 text-emerald-700 dark:text-emerald-400
+            {% elif message.tags == 'error' %}bg-rose-50 border border-rose-200 text-rose-700
+            {% elif message.tags == 'warning' %}bg-amber-50 border border-amber-200 text-amber-700
+            {% else %}bg-sky-50 border border-sky-200 text-sky-700{% endif %}">
+            {{ message }}
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    <div class="bg-white dark:bg-slate-800 border border-blue-200 dark:border-slate-700 rounded-2xl shadow-sm overflow-hidden shadow-sm">
+        <div class="grid grid-cols-1 md:grid-cols-2">
+
+            <!-- Photo -->
+            <div class="bg-slate-100 dark:bg-slate-700 aspect-square md:aspect-auto md:min-h-[24rem] flex items-center justify-center overflow-hidden">
+                {% if product.image %}
+                <img src="{{ product.image.url }}" alt="{{ product.name }}" class="w-full h-full object-cover">
+                {% else %}
+                <div class="flex flex-col items-center text-slate-300">
+                    <svg class="w-20 h-20" fill="none" viewBox="0 0 24 24" stroke-width="1" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="m2.25 15.75 5.159-5.159a2.25 2.25 0 0 1 3.182 0l5.159 5.159m-1.5-1.5 1.409-1.409a2.25 2.25 0 0 1 3.182 0l2.909 2.909M3.75 21h16.5A2.25 2.25 0 0 0 22.5 18.75V5.25A2.25 2.25 0 0 0 20.25 3H3.75A2.25 2.25 0 0 0 1.5 5.25v13.5A2.25 2.25 0 0 0 3.75 21Z" />
+                    </svg>
+                    <span class="text-sm mt-2">No image</span>
+                </div>
+                {% endif %}
+            </div>
+
+            <!-- Details -->
+            <div class="p-6 sm:p-8 flex flex-col">
+                <p class="text-xs font-medium uppercase tracking-wide text-indigo-500 dark:text-indigo-400">
+                    {{ product.category.name }}{% if product.subcategory %} → {{ product.subcategory.name }}{% endif %}
+                </p>
+                <h1 class="text-2xl font-bold text-slate-900 dark:text-slate-100 mt-1">{{ product.name }}</h1>
+
+                <!-- Location -->
+                <div class="flex items-center gap-2 mt-4 text-slate-600 dark:text-slate-300">
+                    <span class="inline-flex items-center justify-center h-8 w-8 rounded-lg bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-400">
+                        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M15 10.5a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" />
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1 1 15 0Z" />
+                        </svg>
+                    </span>
+                    <div>
+                        <p class="text-[11px] uppercase tracking-wide text-slate-400 dark:text-slate-500">Location</p>
+                        <p class="text-sm font-semibold text-slate-800 dark:text-slate-200">{{ product.place }}</p>
+                    </div>
+                </div>
+
+                <!-- Prices -->
+                <div class="mt-6 grid grid-cols-2 gap-3">
+                    <!-- Current price (always visible) -->
+                    <div class="rounded-xl border border-emerald-200 dark:border-emerald-500/30 bg-emerald-50 dark:bg-emerald-500/10 p-4">
+                        <p class="text-[11px] uppercase tracking-wide text-emerald-600 dark:text-emerald-400 font-medium">Current Price</p>
+                        <p class="text-2xl font-bold text-emerald-700 dark:text-emerald-400 mt-1">₹{{ product.current_price }}</p>
+                    </div>
+
+                    <!-- MSP (hidden — reveal on double-click for 3s) -->
+                    <div class="rounded-xl border border-blue-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 p-4 select-none cursor-pointer"
+                         id="msp-box"
+                         data-msp="₹{{ product.minimum_selling_price }}"
+                         title="Double-click to reveal">
+                        <p class="text-[11px] uppercase tracking-wide text-slate-500 dark:text-slate-400 font-medium">MSP</p>
+                        <p id="msp-value" class="text-2xl font-bold text-slate-400 dark:text-slate-500 mt-1">••••</p>
+                        <p id="msp-hint" class="text-[11px] text-slate-400 dark:text-slate-500 mt-1">Double-click to reveal</p>
+                    </div>
+                </div>
+
+                <!-- Add to billing -->
+                <form method="POST" action="{% url 'add_to_bill' product.pk %}" class="mt-auto pt-8">
+                    {% csrf_token %}
+                    <button type="submit"
+                            class="w-full inline-flex items-center justify-center gap-2 bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-semibold px-5 py-3 rounded-xl shadow-lg shadow-indigo-600/20 transition">
+                        <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M2.25 3h1.386c.51 0 .955.343 1.087.835l.383 1.437M7.5 14.25a3 3 0 0 0-3 3h15.75m-12.75-3h11.218c1.121-2.3 2.1-4.684 2.924-7.138a60.114 60.114 0 0 0-16.536-1.84M7.5 14.25 5.106 5.272M6 20.25a.75.75 0 1 1-1.5 0 .75.75 0 0 1 1.5 0Zm12.75 0a.75.75 0 1 1-1.5 0 .75.75 0 0 1 1.5 0Z" />
+                        </svg>
+                        Add for Billing
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    (function () {
+        const box = document.getElementById('msp-box');
+        const value = document.getElementById('msp-value');
+        const hint = document.getElementById('msp-hint');
+        const msp = box.getAttribute('data-msp');
+        let revertTimer = null;
+
+        box.addEventListener('dblclick', function () {
+            value.textContent = msp;
+            value.classList.remove('text-slate-400', 'dark:text-slate-500');
+            value.classList.add('text-slate-900', 'dark:text-slate-100');
+            if (hint) hint.textContent = 'Hiding in 3 seconds…';
+
+            clearTimeout(revertTimer);
+            revertTimer = setTimeout(function () {
+                value.textContent = '••••';
+                value.classList.remove('text-slate-900', 'dark:text-slate-100');
+                value.classList.add('text-slate-400', 'dark:text-slate-500');
+                if (hint) hint.textContent = 'Double-click to reveal';
+            }, 3000);
+        });
+    })();
+</script>
+{% endblock %}

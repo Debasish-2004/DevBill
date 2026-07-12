@@ -22,4 +22,10 @@ urlpatterns = [
 
     # Bulk pricing
     path("bulk-price-change/", views.bulk_price_change, name="bulk_price_change"),
+
+    # Customers & billing
+    path("customers/", views.customer_list, name="customer_list"),
+    path("customers/<int:pk>/", views.customer_detail, name="customer_detail"),
+    path("customers/<int:pk>/edit/", views.customer_edit, name="customer_edit"),
+    path("pay-later/", views.paylater_list, name="paylater_list"),
 ]

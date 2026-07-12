@@ -1,0 +1,67 @@
+{% load static tailwind_tags %}
+<!DOCTYPE html>
+<html lang="en" class="h-full bg-slate-950">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Owner Login — Lingara Sanitary</title>
+    {% tailwind_css %}
+</head>
+<body class="flex flex-col min-h-full text-slate-100 bg-gradient-to-b from-slate-950 via-[#0f172a] to-slate-950">
+
+    <main class="flex-grow flex items-center justify-center px-4 py-12">
+        <div class="w-full max-w-md">
+            <div class="text-center mb-8">
+                <a href="{% url 'employee_home' %}" class="text-2xl font-bold tracking-tight text-white hover:text-slate-200 transition">
+                    Lingara Sanitary
+                </a>
+                <p class="mt-2 text-sm text-slate-400">Owner portal — sign in to continue</p>
+            </div>
+
+            <div class="rounded-2xl border border-slate-800 bg-[#0f172a]/80 backdrop-blur-md shadow-2xl shadow-indigo-950/30 p-8">
+                <h1 class="text-xl font-semibold text-white mb-6">Owner Login</h1>
+
+                {% if messages %}
+                <div class="mb-6 space-y-2">
+                    {% for message in messages %}
+                    <div class="rounded-lg px-4 py-3 text-sm {% if message.tags == 'error' %}bg-rose-500/10 text-rose-300 border border-rose-500/20{% else %}bg-indigo-500/10 text-indigo-200 border border-indigo-500/20{% endif %}">
+                        {{ message }}
+                    </div>
+                    {% endfor %}
+                </div>
+                {% endif %}
+
+                <form method="post" class="space-y-5">
+                    {% csrf_token %}
+                    {% if next %}
+                    <input type="hidden" name="next" value="{{ next }}">
+                    {% endif %}
+
+                    <div>
+                        <label for="username" class="block text-sm font-medium text-slate-300 mb-1.5">Username</label>
+                        <input type="text" id="username" name="username" required autofocus autocomplete="username"
+                               value="{{ username|default:'' }}"
+                               class="block w-full rounded-lg border border-slate-700 bg-slate-900/60 px-3 py-2.5 text-sm text-slate-100 placeholder:text-slate-500 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 transition">
+                    </div>
+
+                    <div>
+                        <label for="password" class="block text-sm font-medium text-slate-300 mb-1.5">Password</label>
+                        <input type="password" id="password" name="password" required autocomplete="current-password"
+                               class="block w-full rounded-lg border border-slate-700 bg-slate-900/60 px-3 py-2.5 text-sm text-slate-100 placeholder:text-slate-500 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 transition">
+                    </div>
+
+                    <button type="submit"
+                            class="w-full rounded-lg bg-indigo-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 focus:ring-offset-[#0f172a] transition">
+                        Log in
+                    </button>
+                </form>
+            </div>
+
+            <p class="mt-6 text-center text-xs text-slate-500">
+                <a href="{% url 'employee_home' %}" class="text-slate-400 hover:text-indigo-400 transition">Back to employee dashboard</a>
+            </p>
+        </div>
+    </main>
+
+</body>
+</html>

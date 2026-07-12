@@ -24,20 +24,10 @@
                         <a href="{% url 'edit_product_list' %}" class="text-sm font-medium text-slate-300 hover:text-indigo-400 px-3 py-2 rounded-lg hover:bg-slate-800/50 transition">Edit Product</a>
                         <a href="{% url 'edit_category_list' %}" class="text-sm font-medium text-slate-300 hover:text-emerald-400 px-3 py-2 rounded-lg hover:bg-slate-800/50 transition">Categories</a>
                         <a href="{% url 'customer_list' %}" class="text-sm font-medium text-slate-300 hover:text-indigo-400 px-3 py-2 rounded-lg hover:bg-slate-800/50 transition">Customers</a>
-                        <a href="{% url 'paylater_list' %}" class="text-sm font-medium text-slate-300 hover:text-amber-400 px-3 py-2 rounded-lg hover:bg-slate-800/50 transition">Pay Later</a>
                         <span class="text-slate-700 px-1">|</span>
                         <a href="#" class="text-sm font-medium text-rose-400 hover:text-rose-300 px-3 py-2 rounded-lg hover:bg-rose-500/10 transition">Logout</a>
                     </nav>
 
-                    <form action="#" method="GET" class="relative w-48 focus-within:w-64 transition-all duration-300 ease-in-out">
-                        <div class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-2.5">
-                            <svg class="h-4 w-4 text-slate-400" viewBox="0 0 20 20" fill="currentColor">
-                                <path fill-rule="evenodd" d="M9 3.5a5.5 5.5 0 100 11 5.5 5.5 0 000-11zM2 9a7 7 0 1112.452 4.391l3.328 3.329a.75.75 0 11-1.06 1.06l-3.329-3.328A7 7 0 012 9z" clip-rule="evenodd" />
-                            </svg>
-                        </div>
-                        <input type="search" name="q" placeholder="Quick search..." 
-                               class="block w-full rounded-lg border border-slate-700 py-1 pl-8 pr-2.5 text-xs text-slate-200 bg-slate-900/60 placeholder:text-slate-500 focus:bg-slate-900 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 transition">
-                    </form>
                 </div>
 
                 <div class="flex items-center lg:hidden ml-auto">

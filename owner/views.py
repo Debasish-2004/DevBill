@@ -1,14 +1,128 @@
 import json
 from datetime import timedelta
 from decimal import Decimal, InvalidOperation
+from io import BytesIO
+from pathlib import Path
 
+from django.core.files.base import ContentFile
 from django.shortcuts import render, redirect, get_object_or_404
 from django.http import JsonResponse
 from django.contrib import messages
+from django.contrib.auth import authenticate, login, logout
+from django.contrib.auth.views import redirect_to_login
 from django.db.models import Sum, Count, Max, Q
+from django.urls import reverse
 from django.utils import timezone
+from django.views.decorators.http import require_http_methods, require_POST
+from PIL import Image, ImageOps
 
+from .decorators import is_owner
 from .models import Category, SubCategory, Product, Customer, Bill, BillItem
+
+
+def compress_image_for_upload(uploaded_file, max_size_bytes=500 * 1024):
+    if not uploaded_file:
+        return uploaded_file
+
+    uploaded_file.seek(0)
+    image = Image.open(uploaded_file)
+    image = ImageOps.exif_transpose(image)
+    if image.mode in {'RGBA', 'LA', 'P'}:
+        image = image.convert('RGB')
+    image = image.copy()
+
+    original_name = uploaded_file.name or 'image.jpg'
+    extension = Path(original_name).suffix.lower()
+    if extension in {'.jpg', '.jpeg'}:
+        save_format = 'JPEG'
+        filename = f"{Path(original_name).stem}.jpg"
+    elif extension == '.png':
+        save_format = 'PNG'
+        filename = f"{Path(original_name).stem}.png"
+    else:
+        save_format = 'JPEG'
+        filename = f"{Path(original_name).stem}.jpg"
+
+    quality = 95
+    current_image = image
+    while True:
+        buffer = BytesIO()
+        if save_format == 'JPEG':
+            current_image.save(buffer, format='JPEG', quality=quality, optimize=True)
+        else:
+            current_image.save(buffer, format='PNG', optimize=True)
+
+        if len(buffer.getvalue()) <= max_size_bytes or quality <= 20:
+            break
+
+        quality -= 5
+        if quality < 20:
+            quality = 20
+
+        if current_image.width > 200 and current_image.height > 200:
+            current_image = current_image.resize(
+                (max(200, int(current_image.width * 0.9)), max(200, int(current_image.height * 0.9))),
+                Image.LANCZOS,
+            )
+        else:
+            break
+
+    while len(buffer.getvalue()) > max_size_bytes and (current_image.width > 200 or current_image.height > 200):
+        current_image = current_image.resize(
+            (max(200, int(current_image.width * 0.9)), max(200, int(current_image.height * 0.9))),
+            Image.LANCZOS,
+        )
+        buffer = BytesIO()
+        if save_format == 'JPEG':
+            current_image.save(buffer, format='JPEG', quality=max(20, quality), optimize=True)
+        else:
+            current_image.save(buffer, format='PNG', optimize=True)
+
+    return ContentFile(buffer.getvalue(), name=filename)
+
+
+def owner_login(request):
+    if is_owner(request.user):
+        return redirect('owner_home')
+
+    next_url = request.GET.get('next') or request.POST.get('next') or ''
+
+    if request.method == 'POST':
+        username = request.POST.get('username', '').strip()
+        password = request.POST.get('password', '')
+
+        if not username or not password:
+            messages.error(request, 'Username and password are required.')
+            return render(request, 'login.html', {'next': next_url, 'username': username})
+
+        user = authenticate(request, username=username, password=password)
+
+        if user is None:
+            messages.error(request, 'Invalid username or password.')
+            return render(request, 'login.html', {'next': next_url, 'username': username})
+
+        if not user.is_active:
+            messages.error(request, 'This account is inactive.')
+            return render(request, 'login.html', {'next': next_url, 'username': username})
+
+        if user.is_staff:
+            messages.error(request, 'Staff accounts must use the admin panel, not the owner portal.')
+            return render(request, 'login.html', {'next': next_url, 'username': username})
+
+        login(request, user)
+
+        if next_url:
+            return redirect(next_url)
+        return redirect('owner_home')
+
+    return render(request, 'login.html', {'next': next_url})
+
+
+@require_POST
+def owner_logout(request):
+    logout(request)
+    messages.success(request, 'You have been logged out.')
+    return redirect('owner_login')
 
 
 def owner_home(request):
@@ -141,6 +255,35 @@ def get_subcategories(request):
     })
 
 
+def search_products(request):
+    """AJAX endpoint for owner-side product suggestions on the edit page."""
+    q = request.GET.get('q', '').strip()
+    if not q:
+        return JsonResponse({'results': []})
+
+    products = (
+        Product.objects
+        .select_related('category', 'subcategory')
+        .filter(name__icontains=q)[:8]
+    )
+
+    results = []
+    for product in products:
+        if product.subcategory:
+            location = f"{product.category.name} → {product.subcategory.name}"
+        else:
+            location = product.category.name
+        results.append({
+            'id': product.id,
+            'name': product.name,
+            'category': location,
+            'price': f"{product.current_price}",
+            'image': product.image.url if product.image else '',
+            'url': reverse('edit_product', args=[product.id]),
+        })
+    return JsonResponse({'results': results})
+
+
 def add_product(request):
     categories = Category.objects.all()
 
@@ -200,7 +343,7 @@ def add_product(request):
             current_price=cur_price,
         )
         if image:
-            product.image = image
+            product.image = compress_image_for_upload(image)
 
         product.full_clean()
         product.save()
@@ -288,7 +431,7 @@ def edit_product(request, pk):
         product.minimum_selling_price = min_price
         product.current_price = cur_price
         if image:
-            product.image = image
+            product.image = compress_image_for_upload(image)
 
         product.full_clean()
         product.save()

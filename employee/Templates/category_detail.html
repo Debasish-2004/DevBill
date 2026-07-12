@@ -1,0 +1,41 @@
+{% extends "employee_layout.html" %}
+
+{% block title %}{{ category.name }}{% endblock %}
+
+{% block content %}
+<div class="max-w-6xl mx-auto">
+
+    <!-- Breadcrumb -->
+    <nav class="flex items-center gap-1.5 text-sm text-slate-400 dark:text-slate-500 mb-6">
+        <a href="{% url 'product_categories' %}" class="hover:text-indigo-600 transition">Products</a>
+        <span>/</span>
+        <span class="text-slate-700 dark:text-slate-300 font-medium">{{ category.name }}</span>
+    </nav>
+
+    <div class="mb-8">
+        <h1 class="text-2xl font-bold text-slate-900 dark:text-slate-100">{{ category.name }}</h1>
+        <p class="text-sm text-slate-500 dark:text-slate-400 mt-1">Choose a sub-category.</p>
+    </div>
+
+    {% if subcategories %}
+    <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
+        {% for sub in subcategories %}
+        <a href="{% url 'subcategory_detail' sub.pk %}"
+           class="group bg-white dark:bg-slate-800 border border-blue-200 dark:border-slate-700 rounded-2xl shadow-sm p-5 hover:border-indigo-300 hover:shadow-lg hover:shadow-indigo-100 transition flex flex-col">
+            <div class="h-11 w-11 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center mb-4 group-hover:bg-indigo-600 group-hover:text-white transition">
+                <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M2.25 12.75V12A2.25 2.25 0 0 1 4.5 9.75h15A2.25 2.25 0 0 1 21.75 12v.75m-8.69-6.44-2.12-2.12a1.5 1.5 0 0 0-1.061-.44H4.5A2.25 2.25 0 0 0 2.25 6v12a2.25 2.25 0 0 0 2.25 2.25h15A2.25 2.25 0 0 0 21.75 18V9a2.25 2.25 0 0 0-2.25-2.25h-5.379a1.5 1.5 0 0 1-1.06-.44Z" />
+                </svg>
+            </div>
+            <h3 class="text-sm font-semibold text-slate-900 dark:text-slate-100 truncate">{{ sub.name }}</h3>
+            <p class="text-xs text-slate-400 dark:text-slate-500 mt-1">{{ sub.products.count }} product{{ sub.products.count|pluralize }}</p>
+        </a>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="bg-white dark:bg-slate-800 border border-blue-200 dark:border-slate-700 rounded-2xl shadow-sm p-12 text-center">
+        <p class="text-slate-400 dark:text-slate-500 text-sm">No sub-categories yet.</p>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

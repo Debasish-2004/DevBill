@@ -93,3 +93,84 @@ class Product(models.Model):
                     raise ValidationError({
                         'subcategory': 'Subcategory does not belong to the selected category.',
                     })
+
+
+# ─────────────────────────────────────────────
+# CUSTOMERS & BILLING
+# ─────────────────────────────────────────────
+
+class Customer(models.Model):
+    phone = models.CharField(max_length=20, unique=True, db_index=True)
+    name = models.CharField(max_length=200, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return self.name or self.phone
+
+    @property
+    def display_name(self):
+        return self.name if self.name else "Unnamed"
+
+    @property
+    def outstanding(self):
+        """Total amount still owed across all this customer's bills."""
+        agg = self.bills.aggregate(due=models.Sum('amount_due'))
+        return agg['due'] or 0
+
+
+class Bill(models.Model):
+    PAYMENT_CASH = 'cash'
+    PAYMENT_UPI = 'upi'
+    PAYMENT_PAYLATER = 'pay_later'
+    PAYMENT_CHOICES = [
+        (PAYMENT_CASH, 'Cash'),
+        (PAYMENT_UPI, 'UPI'),
+        (PAYMENT_PAYLATER, 'Pay Later'),
+    ]
+
+    customer = models.ForeignKey(
+        Customer, on_delete=models.CASCADE, related_name='bills',
+    )
+    subtotal = models.DecimalField(max_digits=12, decimal_places=2, default=0)
+    discount = models.DecimalField(max_digits=12, decimal_places=2, default=0)
+    total = models.DecimalField(max_digits=12, decimal_places=2, default=0)
+    payment_method = models.CharField(
+        max_length=20, choices=PAYMENT_CHOICES, default=PAYMENT_CASH,
+    )
+    amount_paid = models.DecimalField(max_digits=12, decimal_places=2, default=0)
+    amount_due = models.DecimalField(max_digits=12, decimal_places=2, default=0)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f"Bill #{self.pk} — {self.customer}"
+
+    @property
+    def is_paid(self):
+        return self.amount_due <= 0
+
+    @property
+    def item_count(self):
+        return sum(i.quantity for i in self.items.all())
+
+
+class BillItem(models.Model):
+    bill = models.ForeignKey(
+        Bill, on_delete=models.CASCADE, related_name='items',
+    )
+    product = models.ForeignKey(
+        Product, on_delete=models.SET_NULL, null=True, blank=True,
+        related_name='bill_items',
+    )
+    product_name = models.CharField(max_length=300)   # snapshot at sale time
+    unit_price = models.DecimalField(max_digits=10, decimal_places=2)
+    quantity = models.PositiveIntegerField(default=1)
+    line_total = models.DecimalField(max_digits=12, decimal_places=2)
+
+    def __str__(self):
+        return f"{self.product_name} × {self.quantity}"

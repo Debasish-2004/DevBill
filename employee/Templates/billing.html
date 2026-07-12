@@ -1,0 +1,190 @@
+{% extends "employee_layout.html" %}
+
+{% block title %}Billing{% endblock %}
+
+{% block content %}
+<div class="max-w-5xl mx-auto">
+
+    <div class="flex items-center justify-between mb-8">
+        <div>
+            <h1 class="text-2xl font-bold text-slate-900 dark:text-slate-100">Billing</h1>
+            <p class="text-sm text-slate-500 dark:text-slate-400 mt-1">Review the bill, adjust prices and discount.</p>
+        </div>
+        <a href="{% url 'product_categories' %}" class="text-sm font-medium text-indigo-600 hover:text-indigo-700 transition">+ Add products</a>
+    </div>
+
+    <!-- Messages -->
+    {% if messages %}
+    <div class="mb-6 space-y-2">
+        {% for message in messages %}
+        <div class="px-4 py-3 rounded-lg text-sm font-medium
+            {% if message.tags == 'success' %}bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-200 dark:border-emerald-500/30 text-emerald-700 dark:text-emerald-400
+            {% elif message.tags == 'error' %}bg-rose-50 border border-rose-200 text-rose-700
+            {% elif message.tags == 'warning' %}bg-amber-50 border border-amber-200 text-amber-700
+            {% else %}bg-sky-50 border border-sky-200 text-sky-700{% endif %}">
+            {{ message }}
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    {% if line_items %}
+    <form method="POST" action="{% url 'update_bill' %}" id="bill-form">
+        {% csrf_token %}
+        <input type="hidden" name="action" value="update">
+
+        <div class="bg-white dark:bg-slate-800 border border-blue-200 dark:border-slate-700 rounded-2xl shadow-md shadow-blue-900/5 overflow-hidden">
+            <!-- Header row (desktop) -->
+            <div class="hidden sm:grid grid-cols-12 gap-3 px-5 py-3 bg-blue-50 dark:bg-slate-900/60 border-b border-blue-200 dark:border-slate-700 text-[11px] font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
+                <div class="col-span-5">Product</div>
+                <div class="col-span-2 text-center">Qty</div>
+                <div class="col-span-2 text-right">Price (₹)</div>
+                <div class="col-span-2 text-right">Total</div>
+                <div class="col-span-1"></div>
+            </div>
+
+            {% for item in line_items %}
+            <div class="grid grid-cols-12 gap-3 items-center px-5 py-4 border-b border-blue-100 dark:border-slate-700 last:border-0">
+                <!-- Product -->
+                <div class="col-span-12 sm:col-span-5 flex items-center gap-3">
+                    <div class="h-12 w-12 flex-shrink-0 rounded-lg bg-slate-100 dark:bg-slate-700 overflow-hidden flex items-center justify-center">
+                        {% if item.product.image %}
+                        <img src="{{ item.product.image.url }}" alt="" class="h-full w-full object-cover">
+                        {% else %}
+                        <svg class="h-5 w-5 text-slate-300" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="m2.25 15.75 5.159-5.159a2.25 2.25 0 0 1 3.182 0l5.159 5.159m-1.5-1.5 1.409-1.409a2.25 2.25 0 0 1 3.182 0l2.909 2.909M3.75 21h16.5A2.25 2.25 0 0 0 22.5 18.75V5.25A2.25 2.25 0 0 0 20.25 3H3.75A2.25 2.25 0 0 0 1.5 5.25v13.5A2.25 2.25 0 0 0 3.75 21Z" /></svg>
+                        {% endif %}
+                    </div>
+                    <div class="min-w-0">
+                        <a href="{% url 'product_detail' item.product.pk %}" class="text-sm font-semibold text-slate-900 dark:text-slate-100 hover:text-indigo-600 transition line-clamp-2">{{ item.product.name }}</a>
+                        <p class="text-[11px] text-slate-400 dark:text-slate-500 mt-0.5">MSP ₹{{ item.msp }}</p>
+                    </div>
+                </div>
+
+                <!-- Qty -->
+                <div class="col-span-4 sm:col-span-2 sm:text-center">
+                    <label class="sm:hidden text-[11px] uppercase tracking-wide text-slate-400 dark:text-slate-500 block mb-1">Qty</label>
+                    <input type="number" name="qty_{{ item.product.pk }}" value="{{ item.qty }}" min="1" step="1"
+                           class="w-full sm:w-16 sm:mx-auto text-center rounded-lg border border-blue-200 dark:border-slate-700 px-2 py-1.5 text-sm text-slate-900 dark:text-slate-100 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 transition">
+                </div>
+
+                <!-- Price -->
+                <div class="col-span-4 sm:col-span-2">
+                    <label class="sm:hidden text-[11px] uppercase tracking-wide text-slate-400 dark:text-slate-500 block mb-1">Price</label>
+                    <input type="number" name="price_{{ item.product.pk }}" value="{{ item.price }}"
+                           min="{{ item.msp }}" step="0.01" data-msp="{{ item.msp }}"
+                           class="price-input w-full text-right rounded-lg border border-blue-200 dark:border-slate-700 px-2 py-1.5 text-sm text-slate-900 dark:text-slate-100 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 transition">
+                    <p class="msp-warning hidden text-[11px] text-rose-500 mt-1 text-right">Min ₹{{ item.msp }}</p>
+                </div>
+
+                <!-- Line total -->
+                <div class="col-span-3 sm:col-span-2 text-right">
+                    <label class="sm:hidden text-[11px] uppercase tracking-wide text-slate-400 dark:text-slate-500 block mb-1">Total</label>
+                    <span class="text-sm font-semibold text-slate-900 dark:text-slate-100">₹{{ item.line_total }}</span>
+                </div>
+
+                <!-- Remove -->
+                <div class="col-span-1 flex justify-end">
+                    <button type="submit" form="remove-{{ item.product.pk }}" class="p-1.5 text-slate-400 dark:text-slate-500 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition" title="Remove">
+                        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="m14.74 9-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 0 1-2.244 2.077H8.084a2.25 2.25 0 0 1-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 0 0-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 0 1 3.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 0 0-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 0 0-7.5 0" />
+                        </svg>
+                    </button>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+
+        <!-- Totals & discount -->
+        <div class="mt-6 grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <!-- Discount -->
+            <div class="bg-white dark:bg-slate-800 border border-blue-200 dark:border-slate-700 rounded-2xl shadow-sm p-5 shadow-sm">
+                <label for="discount" class="block text-sm font-semibold text-slate-800 dark:text-slate-200 mb-2">Discount on total (₹)</label>
+                <input type="number" name="discount" id="discount" value="{{ discount }}" min="0" step="0.01"
+                       class="w-full rounded-lg border border-blue-200 dark:border-slate-700 px-3 py-2 text-sm text-slate-900 dark:text-slate-100 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 transition">
+                <p class="text-xs text-slate-400 dark:text-slate-500 mt-2">A flat amount taken off the subtotal. Capped at the subtotal.</p>
+            </div>
+
+            <!-- Summary -->
+            <div class="bg-white dark:bg-slate-800 border border-blue-200 dark:border-slate-700 rounded-2xl shadow-sm p-5 shadow-sm">
+                <div class="flex justify-between text-sm text-slate-600 dark:text-slate-300">
+                    <span>Subtotal</span>
+                    <span class="font-medium text-slate-900 dark:text-slate-100">₹{{ subtotal }}</span>
+                </div>
+                <div class="flex justify-between text-sm text-slate-600 dark:text-slate-300 mt-2">
+                    <span>Discount</span>
+                    <span class="font-medium text-rose-600">− ₹{{ discount }}</span>
+                </div>
+                <div class="border-t border-blue-200 dark:border-slate-700 mt-3 pt-3 flex justify-between items-baseline">
+                    <span class="text-sm font-semibold text-slate-800 dark:text-slate-200">Total</span>
+                    <span class="text-2xl font-bold text-emerald-600 dark:text-emerald-400">₹{{ total }}</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Actions -->
+        <div class="mt-6 flex flex-col sm:flex-row items-center justify-between gap-3">
+            <button type="submit" form="clear-bill" class="text-sm font-medium text-slate-500 dark:text-slate-400 hover:text-rose-600 transition order-3 sm:order-1"
+                    onclick="return confirm('Clear the entire bill?');">
+                Clear bill
+            </button>
+            <div class="order-1 sm:order-2 w-full sm:w-auto flex flex-col sm:flex-row gap-3 sm:ml-auto">
+                <button type="submit" class="w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-white dark:bg-slate-800 border border-indigo-300 dark:border-slate-600 text-indigo-700 dark:text-indigo-300 hover:bg-indigo-50 dark:hover:bg-slate-700 text-sm font-semibold px-6 py-2.5 rounded-xl transition">
+                    Update bill
+                </button>
+                <button type="submit" name="next" value="checkout" class="w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-semibold px-6 py-2.5 rounded-xl shadow-lg shadow-indigo-600/20 transition">
+                    Proceed to Payment
+                    <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M13.5 4.5 21 12m0 0-7.5 7.5M21 12H3" />
+                    </svg>
+                </button>
+            </div>
+        </div>
+    </form>
+
+    <!-- Out-of-form helper forms (referenced via form="" attribute) -->
+    {% for item in line_items %}
+    <form method="POST" action="{% url 'update_bill' %}" id="remove-{{ item.product.pk }}" class="hidden">
+        {% csrf_token %}
+        <input type="hidden" name="action" value="remove">
+        <input type="hidden" name="product_id" value="{{ item.product.pk }}">
+    </form>
+    {% endfor %}
+    <form method="POST" action="{% url 'update_bill' %}" id="clear-bill" class="hidden">
+        {% csrf_token %}
+        <input type="hidden" name="action" value="clear">
+    </form>
+
+    {% else %}
+    <div class="bg-white dark:bg-slate-800 border border-blue-200 dark:border-slate-700 rounded-2xl shadow-sm p-12 text-center">
+        <svg class="mx-auto h-12 w-12 text-slate-300 mb-3" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M2.25 3h1.386c.51 0 .955.343 1.087.835l.383 1.437M7.5 14.25a3 3 0 0 0-3 3h15.75m-12.75-3h11.218c1.121-2.3 2.1-4.684 2.924-7.138a60.114 60.114 0 0 0-16.536-1.84M7.5 14.25 5.106 5.272M6 20.25a.75.75 0 1 1-1.5 0 .75.75 0 0 1 1.5 0Zm12.75 0a.75.75 0 1 1-1.5 0 .75.75 0 0 1 1.5 0Z" />
+        </svg>
+        <p class="text-slate-500 dark:text-slate-400 text-sm">Your bill is empty.</p>
+        <a href="{% url 'product_categories' %}" class="inline-block mt-3 bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-semibold px-4 py-2 rounded-lg transition">Browse products</a>
+    </div>
+    {% endif %}
+</div>
+
+<script>
+    // Prevent submitting a price below MSP (server also enforces this)
+    document.querySelectorAll('.price-input').forEach(function (input) {
+        const msp = parseFloat(input.getAttribute('data-msp'));
+        const warning = input.parentElement.querySelector('.msp-warning');
+        function validate() {
+            const val = parseFloat(input.value);
+            if (!isNaN(val) && val < msp) {
+                input.classList.add('border-rose-400', 'ring-2', 'ring-rose-200');
+                if (warning) warning.classList.remove('hidden');
+            } else {
+                input.classList.remove('border-rose-400', 'ring-2', 'ring-rose-200');
+                if (warning) warning.classList.add('hidden');
+            }
+        }
+        input.addEventListener('input', validate);
+        input.addEventListener('blur', function () {
+            const val = parseFloat(input.value);
+            if (!isNaN(val) && val < msp) { input.value = msp.toFixed(2); validate(); }
+        });
+    });
+</script>
+{% endblock %}

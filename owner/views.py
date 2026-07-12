@@ -1,11 +1,14 @@
 import json
+from datetime import timedelta
 from decimal import Decimal, InvalidOperation
 
 from django.shortcuts import render, redirect, get_object_or_404
 from django.http import JsonResponse
 from django.contrib import messages
+from django.db.models import Sum, Count, Max, Q
+from django.utils import timezone
 
-from .models import Category, SubCategory, Product
+from .models import Category, SubCategory, Product, Customer, Bill, BillItem
 
 
 def owner_home(request):
@@ -365,3 +368,104 @@ def bulk_price_change(request):
         return redirect('bulk_price_change')
 
     return render(request, 'bulk_price_change.html', {'categories': categories})
+
+# ─────────────────────────────────────────────
+# CUSTOMERS & BILLS
+# ─────────────────────────────────────────────
+
+def _period_start(period):
+    """Return the datetime cutoff for a named period, or None for 'all'."""
+    now = timezone.now()
+    if period == 'week':
+        return now - timedelta(days=7)
+    if period == 'month':
+        return now - timedelta(days=30)
+    if period == 'year':
+        return now - timedelta(days=365)
+    return None
+
+
+def customer_list(request):
+    period = request.GET.get('period', 'all')
+    start = _period_start(period)
+
+    bill_filter = Q(bills__created_at__gte=start) if start else Q()
+
+    customers = (
+        Customer.objects
+        .annotate(
+            bill_count=Count('bills', filter=bill_filter),
+            spent=Sum('bills__total', filter=bill_filter),
+            due=Sum('bills__amount_due', filter=bill_filter),
+            last_purchase=Max('bills__created_at', filter=bill_filter),
+        )
+        .filter(bill_count__gt=0)
+        .order_by('-last_purchase')
+    )
+
+    return render(request, 'customer_list.html', {
+        'customers': customers,
+        'period': period,
+        'period_options': [
+            ('all', 'All time'),
+            ('week', 'This week'),
+            ('month', 'This month'),
+            ('year', 'This year'),
+        ],
+    })
+
+
+def customer_detail(request, pk):
+    customer = get_object_or_404(Customer, pk=pk)
+    bills = customer.bills.prefetch_related('items').all()
+    totals = customer.bills.aggregate(
+        spent=Sum('total'),
+        paid=Sum('amount_paid'),
+        due=Sum('amount_due'),
+    )
+    return render(request, 'customer_detail.html', {
+        'customer': customer,
+        'bills': bills,
+        'spent': totals['spent'] or 0,
+        'paid': totals['paid'] or 0,
+        'due': totals['due'] or 0,
+    })
+
+
+def customer_edit(request, pk):
+    customer = get_object_or_404(Customer, pk=pk)
+    if request.method == 'POST':
+        name = request.POST.get('name', '').strip()
+        customer.name = name
+        customer.save(update_fields=['name'])
+        if name:
+            messages.success(request, f'Customer name set to "{name}".')
+        else:
+            messages.info(request, 'Customer name cleared.')
+    return redirect('customer_detail', pk=pk)
+
+
+def paylater_list(request):
+    sort = request.GET.get('sort', 'amount')   # amount | time
+
+    customers = (
+        Customer.objects
+        .annotate(
+            due=Sum('bills__amount_due'),
+            last_purchase=Max('bills__created_at'),
+        )
+        .filter(due__gt=0)
+    )
+
+    if sort == 'time':
+        customers = customers.order_by('-last_purchase')
+    else:
+        customers = customers.order_by('-due')
+
+    total_outstanding = customers.aggregate(t=Sum('due'))['t'] or 0
+
+    return render(request, 'paylater_list.html', {
+        'customers': customers,
+        'sort': sort,
+        'total_outstanding': total_outstanding,
+    })

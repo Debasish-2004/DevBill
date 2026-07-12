@@ -1,0 +1,106 @@
+{% load static tailwind_tags %}
+<!DOCTYPE html>
+<html lang="en" class="h-full bg-slate-100">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bill #{{ bill.pk }} — Lingaraj Sanitary</title>
+    {% tailwind_css %}
+    <style>
+        @media print {
+            .no-print { display: none !important; }
+            body { background: #fff !important; }
+            @page { margin: 8mm; }
+        }
+    </style>
+</head>
+<body class="min-h-full text-slate-800 py-6 px-4">
+
+    <!-- Toolbar (screen only) -->
+    <div class="no-print max-w-sm mx-auto mb-4 flex items-center justify-between gap-2">
+        <a href="{% url 'billing' %}" class="text-sm font-medium text-slate-600 hover:text-slate-900 transition">← New bill</a>
+        <div class="flex gap-2">
+            <a href="{% url 'product_categories' %}" class="text-sm font-medium text-slate-600 hover:text-slate-900 px-3 py-1.5 rounded-lg hover:bg-slate-200 transition">Products</a>
+            <button type="button" onclick="window.print()" class="inline-flex items-center gap-1.5 bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-semibold px-4 py-1.5 rounded-lg shadow transition">
+                <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M6.72 13.829c-.24.03-.48.062-.72.096m.72-.096a42.415 42.415 0 0 1 10.56 0m-10.56 0L6.34 18m10.94-4.171L17.66 18m0 0 .229 2.523a1.125 1.125 0 0 1-1.12 1.227H7.231c-.662 0-1.18-.568-1.12-1.227L6.34 18m11.318 0h1.091A2.25 2.25 0 0 0 21 15.75V9.456c0-1.081-.768-2.015-1.837-2.175a48.055 48.055 0 0 0-1.913-.247M6.34 18H5.25A2.25 2.25 0 0 1 3 15.75V9.456c0-1.081.768-2.015 1.837-2.175M18 10.5h.008v.008H18V10.5Z" /></svg>
+                Print
+            </button>
+        </div>
+    </div>
+
+    <!-- Receipt -->
+    <div class="max-w-sm mx-auto bg-white rounded-xl shadow-md print:shadow-none print:rounded-none border border-slate-200 print:border-0 p-6" id="receipt">
+        <div class="text-center border-b border-dashed border-slate-300 pb-4">
+            <h1 class="text-lg font-bold tracking-tight text-slate-900">Lingaraj Sanitary</h1>
+            <p class="text-xs text-slate-500 mt-0.5">Tax Invoice / Receipt</p>
+        </div>
+
+        <div class="flex justify-between text-xs text-slate-600 mt-4">
+            <div>
+                <p><span class="text-slate-400">Bill No:</span> #{{ bill.pk }}</p>
+                <p class="mt-0.5"><span class="text-slate-400">Date:</span> {{ bill.created_at|date:"d M Y, h:i A" }}</p>
+            </div>
+            <div class="text-right">
+                <p><span class="text-slate-400">Phone:</span> {{ bill.customer.phone }}</p>
+                {% if bill.customer.name %}<p class="mt-0.5"><span class="text-slate-400">Name:</span> {{ bill.customer.name }}</p>{% endif %}
+            </div>
+        </div>
+
+        <!-- Items -->
+        <table class="w-full text-xs mt-4">
+            <thead>
+                <tr class="border-b border-slate-300 text-slate-500 text-left">
+                    <th class="py-1.5 font-medium">Item</th>
+                    <th class="py-1.5 font-medium text-center">Qty</th>
+                    <th class="py-1.5 font-medium text-right">Price</th>
+                    <th class="py-1.5 font-medium text-right">Total</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in items %}
+                <tr class="border-b border-slate-100">
+                    <td class="py-1.5 text-slate-800">{{ item.product_name }}</td>
+                    <td class="py-1.5 text-center text-slate-600">{{ item.quantity }}</td>
+                    <td class="py-1.5 text-right text-slate-600">₹{{ item.unit_price }}</td>
+                    <td class="py-1.5 text-right text-slate-800 font-medium">₹{{ item.line_total }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+
+        <!-- Totals -->
+        <div class="mt-4 space-y-1 text-xs">
+            <div class="flex justify-between text-slate-600"><span>Subtotal</span><span>₹{{ bill.subtotal }}</span></div>
+            <div class="flex justify-between text-slate-600"><span>Discount</span><span>− ₹{{ bill.discount }}</span></div>
+            <div class="flex justify-between text-base font-bold text-slate-900 border-t border-slate-300 pt-2 mt-1">
+                <span>Total</span><span>₹{{ bill.total }}</span>
+            </div>
+        </div>
+
+        <!-- Payment -->
+        <div class="mt-4 rounded-lg bg-slate-50 print:bg-white p-3 text-xs space-y-1">
+            <div class="flex justify-between"><span class="text-slate-500">Payment</span><span class="font-semibold text-slate-800">{{ bill.get_payment_method_display }}</span></div>
+            <div class="flex justify-between"><span class="text-slate-500">Paid</span><span class="text-emerald-700 font-semibold">₹{{ bill.amount_paid }}</span></div>
+            {% if bill.amount_due > 0 %}
+            <div class="flex justify-between"><span class="text-slate-500">Balance due</span><span class="text-rose-600 font-bold">₹{{ bill.amount_due }}</span></div>
+            {% endif %}
+        </div>
+
+        {% if bill.amount_due > 0 %}
+        <p class="text-center text-[11px] text-rose-600 font-medium mt-3">** Balance of ₹{{ bill.amount_due }} to be paid later **</p>
+        {% endif %}
+
+        <p class="text-center text-[11px] text-slate-400 mt-4 border-t border-dashed border-slate-300 pt-3">
+            Thank you for shopping with us!
+        </p>
+    </div>
+
+    {% if auto_print %}
+    <script>
+        window.addEventListener('load', function () {
+            setTimeout(function () { window.print(); }, 300);
+        });
+    </script>
+    {% endif %}
+</body>
+</html>

@@ -33,4 +33,6 @@ urlpatterns = [
     path("customers/<int:pk>/", owner_required(views.customer_detail), name="customer_detail"),
     path("customers/<int:pk>/edit/", owner_required(views.customer_edit), name="customer_edit"),
     path("pay-later/", owner_required(views.paylater_list), name="paylater_list"),
+    path("returns/", owner_required(views.returned_list), name="returned_list"),
+    path("deposits/", owner_required(views.deposit_list), name="deposit_list"),
 ]

@@ -11,13 +11,17 @@ from django.contrib import messages
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.views import redirect_to_login
 from django.db.models import Sum, Count, Max, Q
+from django.db.models.functions import TruncDate
 from django.urls import reverse
 from django.utils import timezone
 from django.views.decorators.http import require_http_methods, require_POST
 from PIL import Image, ImageOps
 
 from .decorators import is_owner
-from .models import Category, SubCategory, Product, Customer, Bill, BillItem
+from .models import (
+    Category, SubCategory, Product, Customer, Bill, BillItem,
+    Return, ReturnItem, Deposit,
+)
 
 
 def compress_image_for_upload(uploaded_file, max_size_bytes=500 * 1024):
@@ -126,11 +130,73 @@ def owner_logout(request):
 
 
 def owner_home(request):
-    categories_count = Category.objects.count()
-    products_count = Product.objects.count()
+    today = timezone.localdate()
+    week_start = today - timedelta(days=6)
+    month_start = today.replace(day=1)
+
+    bills_today = Bill.objects.filter(created_at__date=today)
+    bills_week = Bill.objects.filter(created_at__date__gte=week_start)
+    bills_month = Bill.objects.filter(created_at__date__gte=month_start)
+
+    sales_today = bills_today.aggregate(t=Sum('total'))['t'] or 0
+    sales_week = bills_week.aggregate(t=Sum('total'))['t'] or 0
+    sales_month = bills_month.aggregate(t=Sum('total'))['t'] or 0
+
+    total_outstanding = Bill.objects.aggregate(t=Sum('amount_due'))['t'] or 0
+    refunds_month = (
+        Return.objects.filter(created_at__date__gte=month_start)
+        .aggregate(t=Sum('total_refund'))['t'] or 0
+    )
+    deposits_month = (
+        Deposit.objects.filter(created_at__date__gte=month_start)
+        .aggregate(t=Sum('amount'))['t'] or 0
+    )
+
+    # Daily totals for the last 7 days (for the bar chart)
+    daily_raw = {
+        row['day']: row['total']
+        for row in (
+            bills_week
+            .annotate(day=TruncDate('created_at'))
+            .values('day')
+            .annotate(total=Sum('total'))
+        )
+    }
+    week_days = []
+    for i in range(7):
+        day = week_start + timedelta(days=i)
+        week_days.append({'day': day, 'total': daily_raw.get(day, 0)})
+    max_day_total = max((d['total'] for d in week_days), default=0)
+    for d in week_days:
+        d['pct'] = int(d['total'] / max_day_total * 100) if max_day_total else 0
+
+    # Top 5 products this month by units sold
+    top_products = (
+        BillItem.objects
+        .filter(bill__created_at__date__gte=month_start)
+        .values('product_name')
+        .annotate(units=Sum('quantity'), revenue=Sum('line_total'))
+        .order_by('-units')[:5]
+    )
+
+    recent_bills = Bill.objects.select_related('customer').order_by('-created_at')[:8]
+
     context = {
-        'categories_count': categories_count,
-        'products_count': products_count,
+        'sales_today': sales_today,
+        'bills_today_count': bills_today.count(),
+        'sales_week': sales_week,
+        'sales_month': sales_month,
+        'bills_month_count': bills_month.count(),
+        'total_outstanding': total_outstanding,
+        'refunds_month': refunds_month,
+        'deposits_month': deposits_month,
+        'week_days': week_days,
+        'top_products': top_products,
+        'recent_bills': recent_bills,
+        'categories_count': Category.objects.count(),
+        'products_count': Product.objects.count(),
+        'customers_count': Customer.objects.count(),
+        'today': today,
     }
     return render(request, "owner_home.html", context)
 
@@ -586,6 +652,58 @@ def customer_edit(request, pk):
         else:
             messages.info(request, 'Customer name cleared.')
     return redirect('customer_detail', pk=pk)
+
+
+def returned_list(request):
+    """All product returns raised by employees, newest first."""
+    period = request.GET.get('period', 'all')
+    start = _period_start(period)
+
+    returns = (
+        Return.objects
+        .select_related('customer', 'bill')
+        .prefetch_related('items')
+    )
+    if start:
+        returns = returns.filter(created_at__gte=start)
+
+    total_refunded = returns.aggregate(t=Sum('total_refund'))['t'] or 0
+
+    return render(request, 'returned_list.html', {
+        'returns': returns,
+        'total_refunded': total_refunded,
+        'period': period,
+        'period_options': [
+            ('all', 'All time'),
+            ('week', 'This week'),
+            ('month', 'This month'),
+            ('year', 'This year'),
+        ],
+    })
+
+
+def deposit_list(request):
+    """All deposits collected from customers by employees, newest first."""
+    period = request.GET.get('period', 'all')
+    start = _period_start(period)
+
+    deposits = Deposit.objects.select_related('customer')
+    if start:
+        deposits = deposits.filter(created_at__gte=start)
+
+    total_collected = deposits.aggregate(t=Sum('amount'))['t'] or 0
+
+    return render(request, 'deposit_list.html', {
+        'deposits': deposits,
+        'total_collected': total_collected,
+        'period': period,
+        'period_options': [
+            ('all', 'All time'),
+            ('week', 'This week'),
+            ('month', 'This month'),
+            ('year', 'This year'),
+        ],
+    })
 
 
 def paylater_list(request):

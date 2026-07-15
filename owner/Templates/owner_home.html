@@ -1,12 +1,235 @@
 {% extends "owner_layout.html" %}
 
-{% block title %}
-Owner-home
-{% endblock %}
+{% block title %}Owner Dashboard{% endblock %}
 
 {% block content %}
-<div class="p-6">
-    <h1 class="text-3xl font-bold">Welcome</h1>
-    <p>This is the home page.</p>
+<div class="max-w-7xl mx-auto">
+
+    <!-- ── Header ───────────────────────────────────────────── -->
+    <div class="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-2 mb-8">
+        <div>
+            <h1 class="text-2xl sm:text-3xl font-bold text-white tracking-tight">Dashboard</h1>
+            <p class="text-sm text-slate-400 mt-1">{{ today|date:"l, j F Y" }} — here's how the shop is doing.</p>
+        </div>
+        <div class="flex gap-2">
+            <a href="{% url 'add_product' %}" class="inline-flex items-center gap-1.5 text-sm font-semibold text-white bg-indigo-600 hover:bg-indigo-500 px-4 py-2 rounded-lg transition">
+                <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" /></svg>
+                Add Product
+            </a>
+        </div>
+    </div>
+
+    <!-- ── Stat cards ───────────────────────────────────────── -->
+    <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+
+        <div class="bg-slate-900/70 border border-slate-800 rounded-2xl p-5">
+            <div class="flex items-center justify-between">
+                <p class="text-xs font-semibold uppercase tracking-wider text-slate-400">Sales Today</p>
+                <span class="h-8 w-8 rounded-lg bg-emerald-500/10 text-emerald-400 flex items-center justify-center">
+                    <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 18 9 11.25l4.306 4.306a11.95 11.95 0 0 1 5.814-5.518l2.74-1.22m0 0-5.94-2.281m5.94 2.28-2.28 5.941" /></svg>
+                </span>
+            </div>
+            <p class="mt-3 text-2xl font-bold text-white">₹{{ sales_today|floatformat:2 }}</p>
+            <p class="mt-1 text-xs text-slate-500">{{ bills_today_count }} bill{{ bills_today_count|pluralize }} today</p>
+        </div>
+
+        <div class="bg-slate-900/70 border border-slate-800 rounded-2xl p-5">
+            <div class="flex items-center justify-between">
+                <p class="text-xs font-semibold uppercase tracking-wider text-slate-400">Last 7 Days</p>
+                <span class="h-8 w-8 rounded-lg bg-sky-500/10 text-sky-400 flex items-center justify-center">
+                    <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 0 1 2.25-2.25h13.5A2.25 2.25 0 0 1 21 7.5v11.25m-18 0A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75m-18 0v-7.5A2.25 2.25 0 0 1 5.25 9h13.5A2.25 2.25 0 0 1 21 11.25v7.5" /></svg>
+                </span>
+            </div>
+            <p class="mt-3 text-2xl font-bold text-white">₹{{ sales_week|floatformat:2 }}</p>
+            <p class="mt-1 text-xs text-slate-500">this week's revenue</p>
+        </div>
+
+        <div class="bg-slate-900/70 border border-slate-800 rounded-2xl p-5">
+            <div class="flex items-center justify-between">
+                <p class="text-xs font-semibold uppercase tracking-wider text-slate-400">This Month</p>
+                <span class="h-8 w-8 rounded-lg bg-indigo-500/10 text-indigo-400 flex items-center justify-center">
+                    <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M3 13.125C3 12.504 3.504 12 4.125 12h2.25c.621 0 1.125.504 1.125 1.125v6.75C7.5 20.496 6.996 21 6.375 21h-2.25A1.125 1.125 0 0 1 3 19.875v-6.75ZM9.75 8.625c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125v11.25c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 0 1-1.125-1.125V8.625ZM16.5 4.125c0-.621.504-1.125 1.125-1.125h2.25C20.496 3 21 3.504 21 4.125v15.75c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 0 1-1.125-1.125V4.125Z" /></svg>
+                </span>
+            </div>
+            <p class="mt-3 text-2xl font-bold text-white">₹{{ sales_month|floatformat:2 }}</p>
+            <p class="mt-1 text-xs text-slate-500">{{ bills_month_count }} bill{{ bills_month_count|pluralize }} this month</p>
+        </div>
+
+        <a href="{% url 'paylater_list' %}" class="bg-slate-900/70 border border-slate-800 rounded-2xl p-5 hover:border-amber-500/50 transition group">
+            <div class="flex items-center justify-between">
+                <p class="text-xs font-semibold uppercase tracking-wider text-slate-400 group-hover:text-amber-400 transition">Outstanding</p>
+                <span class="h-8 w-8 rounded-lg bg-amber-500/10 text-amber-400 flex items-center justify-center">
+                    <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" /></svg>
+                </span>
+            </div>
+            <p class="mt-3 text-2xl font-bold {% if total_outstanding %}text-amber-400{% else %}text-white{% endif %}">₹{{ total_outstanding|floatformat:2 }}</p>
+            <p class="mt-1 text-xs text-slate-500">pay-later dues → view list</p>
+        </a>
+
+    </div>
+
+    <!-- ── Chart + Top products ─────────────────────────────── -->
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-8">
+
+        <!-- 7-day sales bar chart -->
+        <div class="lg:col-span-2 bg-slate-900/70 border border-slate-800 rounded-2xl p-6">
+            <div class="flex items-center justify-between mb-6">
+                <h2 class="text-sm font-bold text-white">Sales — Last 7 Days</h2>
+                <span class="text-xs text-slate-500">₹{{ sales_week|floatformat:2 }} total</span>
+            </div>
+            <div class="flex items-end justify-between gap-2 h-40">
+                {% for d in week_days %}
+                <div class="flex-1 flex flex-col items-center gap-2 h-full justify-end group">
+                    <span class="text-[10px] text-slate-400 opacity-0 group-hover:opacity-100 transition">₹{{ d.total|floatformat:0 }}</span>
+                    <div class="w-full max-w-[3rem] rounded-t-lg {% if d.day == today %}bg-indigo-500{% else %}bg-slate-700 group-hover:bg-indigo-600/70{% endif %} transition-all"
+                         style="height: {% if d.pct %}{{ d.pct }}%{% else %}2px{% endif %};"></div>
+                    <span class="text-[11px] {% if d.day == today %}font-bold text-indigo-400{% else %}text-slate-500{% endif %}">{{ d.day|date:"D" }}</span>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- Top products this month -->
+        <div class="bg-slate-900/70 border border-slate-800 rounded-2xl p-6">
+            <h2 class="text-sm font-bold text-white mb-4">Top Products <span class="text-slate-500 font-normal">(this month)</span></h2>
+            {% if top_products %}
+            <ol class="space-y-3">
+                {% for p in top_products %}
+                <li class="flex items-center gap-3">
+                    <span class="h-6 w-6 flex-shrink-0 rounded-md bg-slate-800 text-slate-400 text-xs font-bold flex items-center justify-center">{{ forloop.counter }}</span>
+                    <div class="min-w-0 flex-1">
+                        <p class="text-sm text-slate-200 truncate">{{ p.product_name }}</p>
+                        <p class="text-[11px] text-slate-500">{{ p.units }} unit{{ p.units|pluralize }} · ₹{{ p.revenue|floatformat:2 }}</p>
+                    </div>
+                </li>
+                {% endfor %}
+            </ol>
+            {% else %}
+            <p class="text-sm text-slate-500">No sales recorded this month yet.</p>
+            {% endif %}
+        </div>
+
+    </div>
+
+    <!-- ── Recent bills + month summary ─────────────────────── -->
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-8">
+
+        <!-- Recent bills table -->
+        <div class="lg:col-span-2 bg-slate-900/70 border border-slate-800 rounded-2xl overflow-hidden">
+            <div class="px-6 py-4 border-b border-slate-800 flex items-center justify-between">
+                <h2 class="text-sm font-bold text-white">Recent Bills</h2>
+                <a href="{% url 'customer_list' %}" class="text-xs text-indigo-400 hover:text-indigo-300 transition">All customers →</a>
+            </div>
+            {% if recent_bills %}
+            <table class="w-full text-sm">
+                <thead>
+                    <tr class="text-left text-[11px] uppercase tracking-wider text-slate-500 border-b border-slate-800">
+                        <th class="px-6 py-2.5 font-semibold">Bill</th>
+                        <th class="px-6 py-2.5 font-semibold">Customer</th>
+                        <th class="px-6 py-2.5 font-semibold text-right">Total</th>
+                        <th class="px-6 py-2.5 font-semibold text-right hidden sm:table-cell">Status</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-800/70">
+                    {% for bill in recent_bills %}
+                    <tr class="hover:bg-slate-800/40 transition">
+                        <td class="px-6 py-3 text-slate-300">#{{ bill.pk }} <span class="block text-[11px] text-slate-500">{{ bill.created_at|date:"j M, g:i a" }}</span></td>
+                        <td class="px-6 py-3">
+                            <a href="{% url 'customer_detail' bill.customer.pk %}" class="text-slate-200 hover:text-indigo-400 transition">{{ bill.customer.display_name }}</a>
+                            <span class="block text-[11px] text-slate-500">{{ bill.customer.phone }}</span>
+                        </td>
+                        <td class="px-6 py-3 text-right font-semibold text-white">₹{{ bill.total|floatformat:2 }}</td>
+                        <td class="px-6 py-3 text-right hidden sm:table-cell">
+                            {% if bill.is_paid %}
+                            <span class="inline-flex items-center rounded-full bg-emerald-500/10 text-emerald-400 px-2.5 py-0.5 text-[11px] font-semibold">Paid</span>
+                            {% else %}
+                            <span class="inline-flex items-center rounded-full bg-amber-500/10 text-amber-400 px-2.5 py-0.5 text-[11px] font-semibold">₹{{ bill.amount_due|floatformat:2 }} due</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            {% else %}
+            <p class="px-6 py-8 text-sm text-slate-500">No bills yet — they'll show up here as employees start billing.</p>
+            {% endif %}
+        </div>
+
+        <!-- Month money summary + inventory -->
+        <div class="space-y-4">
+            <div class="bg-slate-900/70 border border-slate-800 rounded-2xl p-6">
+                <h2 class="text-sm font-bold text-white mb-4">This Month</h2>
+                <dl class="space-y-3 text-sm">
+                    <div class="flex items-center justify-between">
+                        <dt class="text-slate-400">Revenue</dt>
+                        <dd class="font-semibold text-emerald-400">₹{{ sales_month|floatformat:2 }}</dd>
+                    </div>
+                    <div class="flex items-center justify-between">
+                        <dt class="text-slate-400">Refunds <a href="{% url 'returned_list' %}" class="text-[11px] text-indigo-400 hover:text-indigo-300">view</a></dt>
+                        <dd class="font-semibold text-rose-400">− ₹{{ refunds_month|floatformat:2 }}</dd>
+                    </div>
+                    <div class="flex items-center justify-between">
+                        <dt class="text-slate-400">Deposits collected <a href="{% url 'deposit_list' %}" class="text-[11px] text-indigo-400 hover:text-indigo-300">view</a></dt>
+                        <dd class="font-semibold text-sky-400">₹{{ deposits_month|floatformat:2 }}</dd>
+                    </div>
+                </dl>
+            </div>
+
+            <div class="bg-slate-900/70 border border-slate-800 rounded-2xl p-6">
+                <h2 class="text-sm font-bold text-white mb-4">Catalog</h2>
+                <div class="grid grid-cols-3 gap-2 text-center">
+                    <a href="{% url 'edit_product_list' %}" class="rounded-xl bg-slate-800/60 hover:bg-slate-800 p-3 transition">
+                        <p class="text-xl font-bold text-white">{{ products_count }}</p>
+                        <p class="text-[11px] text-slate-400 mt-0.5">Products</p>
+                    </a>
+                    <a href="{% url 'edit_category_list' %}" class="rounded-xl bg-slate-800/60 hover:bg-slate-800 p-3 transition">
+                        <p class="text-xl font-bold text-white">{{ categories_count }}</p>
+                        <p class="text-[11px] text-slate-400 mt-0.5">Categories</p>
+                    </a>
+                    <a href="{% url 'customer_list' %}" class="rounded-xl bg-slate-800/60 hover:bg-slate-800 p-3 transition">
+                        <p class="text-xl font-bold text-white">{{ customers_count }}</p>
+                        <p class="text-[11px] text-slate-400 mt-0.5">Customers</p>
+                    </a>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- ── Quick actions ────────────────────────────────────── -->
+    <div class="grid grid-cols-2 sm:grid-cols-4 gap-4">
+        <a href="{% url 'bulk_price_change' %}" class="group bg-slate-900/70 border border-slate-800 rounded-2xl p-5 hover:border-sky-500/50 transition">
+            <div class="h-10 w-10 rounded-xl bg-sky-500/10 text-sky-400 flex items-center justify-center mb-3 group-hover:bg-sky-500 group-hover:text-white transition">
+                <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="m9 14.25 6-6m4.5-3.493V21.75l-3.75-1.5-3.75 1.5-3.75-1.5-3.75 1.5V4.757c0-1.108.806-2.057 1.907-2.185a48.507 48.507 0 0 1 11.186 0c1.1.128 1.907 1.077 1.907 2.185ZM9.75 9h.008v.008H9.75V9Zm.375 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Zm4.125 4.5h.008v.008h-.008V13.5Zm.375 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Z" /></svg>
+            </div>
+            <h3 class="text-sm font-semibold text-white">Bulk Price Change</h3>
+            <p class="text-xs text-slate-500 mt-1">Raise or drop prices by %</p>
+        </a>
+
+        <a href="{% url 'edit_category_list' %}" class="group bg-slate-900/70 border border-slate-800 rounded-2xl p-5 hover:border-emerald-500/50 transition">
+            <div class="h-10 w-10 rounded-xl bg-emerald-500/10 text-emerald-400 flex items-center justify-center mb-3 group-hover:bg-emerald-500 group-hover:text-white transition">
+                <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M9.568 3H5.25A2.25 2.25 0 0 0 3 5.25v4.318c0 .597.237 1.17.659 1.591l9.581 9.581c.699.699 1.78.872 2.607.33a18.095 18.095 0 0 0 5.223-5.223c.542-.827.369-1.908-.33-2.607L11.16 3.66A2.25 2.25 0 0 0 9.568 3Z" /><path stroke-linecap="round" stroke-linejoin="round" d="M6 6h.008v.008H6V6Z" /></svg>
+            </div>
+            <h3 class="text-sm font-semibold text-white">Categories</h3>
+            <p class="text-xs text-slate-500 mt-1">Manage categories &amp; subs</p>
+        </a>
+
+        <a href="{% url 'paylater_list' %}" class="group bg-slate-900/70 border border-slate-800 rounded-2xl p-5 hover:border-amber-500/50 transition">
+            <div class="h-10 w-10 rounded-xl bg-amber-500/10 text-amber-400 flex items-center justify-center mb-3 group-hover:bg-amber-500 group-hover:text-white transition">
+                <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 8.25h19.5M2.25 9h19.5m-16.5 5.25h6m-6 2.25h3m-3.75 3h15a2.25 2.25 0 0 0 2.25-2.25V6.75A2.25 2.25 0 0 0 19.5 4.5h-15a2.25 2.25 0 0 0-2.25 2.25v10.5A2.25 2.25 0 0 0 4.5 19.5Z" /></svg>
+            </div>
+            <h3 class="text-sm font-semibold text-white">Pay Later</h3>
+            <p class="text-xs text-slate-500 mt-1">Customers with dues</p>
+        </a>
+
+        <a href="{% url 'employee_home' %}" class="group bg-slate-900/70 border border-slate-800 rounded-2xl p-5 hover:border-indigo-500/50 transition">
+            <div class="h-10 w-10 rounded-xl bg-indigo-500/10 text-indigo-400 flex items-center justify-center mb-3 group-hover:bg-indigo-500 group-hover:text-white transition">
+                <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 3h1.386c.51 0 .955.343 1.087.835l.383 1.437M7.5 14.25a3 3 0 0 0-3 3h15.75m-12.75-3h11.218c1.121-2.3 2.1-4.684 2.924-7.138a60.114 60.114 0 0 0-16.536-1.84M7.5 14.25 5.106 5.272M6 20.25a.75.75 0 1 1-1.5 0 .75.75 0 0 1 1.5 0Zm12.75 0a.75.75 0 1 1-1.5 0 .75.75 0 0 1 1.5 0Z" /></svg>
+            </div>
+            <h3 class="text-sm font-semibold text-white">Billing Counter</h3>
+            <p class="text-xs text-slate-500 mt-1">Go to employee side</p>
+        </a>
+    </div>
+
 </div>
 {% endblock %}

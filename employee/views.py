@@ -6,8 +6,12 @@ from django.http import JsonResponse
 from django.urls import reverse
 from django.contrib import messages
 from django.db import transaction
+from django.utils import timezone
 
-from owner.models import Category, SubCategory, Product, Customer, Bill, BillItem
+from owner.models import (
+    Category, SubCategory, Product, Customer, Bill, BillItem,
+    Return, ReturnItem, Deposit,
+)
 
 
 # ─────────────────────────────────────────────
@@ -19,6 +23,7 @@ def employee_home(request):
         'categories_count': Category.objects.count(),
         'products_count': Product.objects.count(),
         'bill_count': _bill_item_count(request),
+        'bills_today': Bill.objects.filter(created_at__date=timezone.localdate()).count(),
     }
     return render(request, "employee_home.html", context)
 
@@ -344,6 +349,213 @@ def receipt(request, bill_id):
         # auto-open the print dialog unless suppressed with ?noprint=1
         'auto_print': request.GET.get('noprint') != '1',
     })
+
+
+# ─────────────────────────────────────────────
+# RETURNS
+# ─────────────────────────────────────────────
+
+def return_search(request):
+    """Search a customer by phone number and list their bills to return from."""
+    phone_raw = request.GET.get('phone', '').strip()
+    customer = None
+    bills = []
+    searched = bool(phone_raw)
+
+    if phone_raw:
+        digits = re.sub(r'[^0-9]', '', phone_raw)
+        if digits:
+            customer = (
+                Customer.objects
+                .filter(phone__icontains=digits)
+                .first()
+            )
+        if customer:
+            bills = (
+                customer.bills
+                .prefetch_related('items__return_items')
+                .all()
+            )
+
+    return render(request, 'return_search.html', {
+        'phone': phone_raw,
+        'customer': customer,
+        'bills': bills,
+        'searched': searched,
+        'bill_count': _bill_item_count(request),
+    })
+
+
+def return_bill(request, bill_id):
+    """Show the items on a bill and let the employee return some/all of them."""
+    bill = get_object_or_404(
+        Bill.objects.select_related('customer').prefetch_related('items__return_items'),
+        pk=bill_id,
+    )
+
+    if request.method == 'POST':
+        reason = request.POST.get('reason', '').strip()
+        line_items = []
+        total_refund = Decimal('0')
+
+        for item in bill.items.all():
+            qty_raw = request.POST.get(f'return_qty_{item.pk}', '').strip()
+            if not qty_raw:
+                continue
+            try:
+                qty = int(qty_raw)
+            except (ValueError, TypeError):
+                continue
+            if qty <= 0:
+                continue
+
+            # Never allow returning more than what's still returnable
+            returnable = item.returnable_quantity
+            if qty > returnable:
+                qty = returnable
+            if qty <= 0:
+                continue
+
+            line_total = (item.unit_price * qty).quantize(Decimal('0.01'))
+            total_refund += line_total
+            line_items.append({
+                'bill_item': item,
+                'qty': qty,
+                'line_total': line_total,
+            })
+
+        if not line_items:
+            messages.warning(request, 'Select at least one item (with a quantity) to return.')
+            return redirect('return_bill', bill_id=bill.pk)
+
+        total_refund = total_refund.quantize(Decimal('0.01'))
+
+        with transaction.atomic():
+            ret = Return.objects.create(
+                bill=bill,
+                customer=bill.customer,
+                total_refund=total_refund,
+                reason=reason,
+            )
+            ReturnItem.objects.bulk_create([
+                ReturnItem(
+                    ret=ret,
+                    bill_item=li['bill_item'],
+                    product=li['bill_item'].product,
+                    product_name=li['bill_item'].product_name,
+                    unit_price=li['bill_item'].unit_price,
+                    quantity=li['qty'],
+                    line_total=li['line_total'],
+                )
+                for li in line_items
+            ])
+
+            # If the customer owes money, the refund settles that first;
+            # only the remainder is a cash refund.
+            applied = bill.customer.apply_payment(total_refund)
+            if applied:
+                ret.applied_to_outstanding = applied
+                ret.save(update_fields=['applied_to_outstanding'])
+
+        cash_refund = total_refund - applied
+        if applied:
+            messages.success(
+                request,
+                f'Return recorded — {ret.item_count} item(s), ₹{total_refund} refunded. '
+                f'₹{applied} adjusted against outstanding, ₹{cash_refund} cash refund.',
+            )
+        else:
+            messages.success(
+                request,
+                f'Return recorded — {ret.item_count} item(s), ₹{total_refund} refunded.',
+            )
+        return redirect('return_search')
+
+    # GET: build display rows with how much is still returnable
+    rows = []
+    for item in bill.items.all():
+        rows.append({
+            'item': item,
+            'returned': item.returned_quantity,
+            'returnable': item.returnable_quantity,
+        })
+
+    return render(request, 'return_bill.html', {
+        'bill': bill,
+        'rows': rows,
+        'bill_count': _bill_item_count(request),
+    })
+
+
+# ─────────────────────────────────────────────
+# DEPOSITS (collect outstanding)
+# ─────────────────────────────────────────────
+
+def deposit_search(request):
+    """Search a customer by phone and, if they owe money, collect a deposit."""
+    phone_raw = request.GET.get('phone', '').strip()
+    customer = None
+    searched = bool(phone_raw)
+
+    if phone_raw:
+        digits = re.sub(r'[^0-9]', '', phone_raw)
+        if digits:
+            customer = Customer.objects.filter(phone__icontains=digits).first()
+
+    return render(request, 'deposit.html', {
+        'phone': phone_raw,
+        'customer': customer,
+        'outstanding': customer.outstanding if customer else 0,
+        'searched': searched,
+        'bill_count': _bill_item_count(request),
+    })
+
+
+def add_deposit(request, customer_id):
+    """Record a deposit against a customer's outstanding balance."""
+    customer = get_object_or_404(Customer, pk=customer_id)
+
+    if request.method != 'POST':
+        return redirect('deposit_search')
+
+    outstanding = customer.outstanding
+    amount_raw = request.POST.get('amount', '').strip()
+    note = request.POST.get('note', '').strip()
+
+    redirect_url = f"{reverse('deposit_search')}?phone={customer.phone}"
+
+    try:
+        amount = Decimal(amount_raw)
+    except (InvalidOperation, ValueError):
+        messages.error(request, 'Enter a valid deposit amount.')
+        return redirect(redirect_url)
+
+    amount = amount.quantize(Decimal('0.01'))
+
+    if amount <= 0:
+        messages.error(request, 'Deposit amount must be greater than zero.')
+        return redirect(redirect_url)
+
+    if outstanding <= 0:
+        messages.info(request, 'This customer has no outstanding balance.')
+        return redirect(redirect_url)
+
+    if amount > outstanding:
+        messages.error(
+            request,
+            f'Deposit cannot exceed the outstanding balance of ₹{outstanding}.',
+        )
+        return redirect(redirect_url)
+
+    with transaction.atomic():
+        applied = customer.apply_payment(amount)
+        Deposit.objects.create(customer=customer, amount=applied, note=note)
+
+    messages.success(
+        request,
+        f'₹{applied} deposited. Remaining outstanding: ₹{customer.outstanding}.',
+    )
+    return redirect(redirect_url)
 
 
 def update_bill(request):

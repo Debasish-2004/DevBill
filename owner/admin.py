@@ -1,5 +1,8 @@
 from django.contrib import admin
-from .models import Category, SubCategory, Product, Customer, Bill, BillItem
+from .models import (
+    Category, SubCategory, Product, Customer, Bill, BillItem,
+    Return, ReturnItem, Deposit,
+)
 
 
 class SubCategoryInline(admin.TabularInline):
@@ -43,3 +46,29 @@ class BillAdmin(admin.ModelAdmin):
 class BillItemAdmin(admin.ModelAdmin):
     list_display = ['bill', 'product_name', 'quantity', 'unit_price', 'line_total']
     search_fields = ['product_name', 'bill__id']
+
+
+class ReturnItemInline(admin.TabularInline):
+    model = ReturnItem
+    extra = 0
+
+
+@admin.register(Return)
+class ReturnAdmin(admin.ModelAdmin):
+    list_display = ['id', 'bill', 'customer', 'total_refund', 'created_at']
+    list_filter = ['created_at']
+    search_fields = ['customer__name', 'customer__phone', 'bill__id']
+    inlines = [ReturnItemInline]
+
+
+@admin.register(ReturnItem)
+class ReturnItemAdmin(admin.ModelAdmin):
+    list_display = ['ret', 'product_name', 'quantity', 'unit_price', 'line_total']
+    search_fields = ['product_name', 'ret__id']
+
+
+@admin.register(Deposit)
+class DepositAdmin(admin.ModelAdmin):
+    list_display = ['id', 'customer', 'amount', 'created_at']
+    list_filter = ['created_at']
+    search_fields = ['customer__name', 'customer__phone']

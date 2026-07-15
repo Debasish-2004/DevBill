@@ -1,0 +1,102 @@
+{% extends "employee_layout.html" %}
+
+{% block title %}Collect Deposit{% endblock %}
+
+{% block content %}
+<div class="max-w-3xl mx-auto">
+
+    <div class="mb-8">
+        <h1 class="text-2xl font-bold text-slate-900 dark:text-slate-100">Collect Deposit</h1>
+        <p class="text-sm text-slate-500 dark:text-slate-400 mt-1">Search a customer by phone number and collect money against their outstanding balance.</p>
+    </div>
+
+    <!-- Messages -->
+    {% if messages %}
+    <div class="mb-6 space-y-2">
+        {% for message in messages %}
+        <div class="px-4 py-3 rounded-lg text-sm font-medium
+            {% if message.tags == 'success' %}bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-200 dark:border-emerald-500/30 text-emerald-700 dark:text-emerald-400
+            {% elif message.tags == 'error' %}bg-rose-50 border border-rose-200 text-rose-700
+            {% elif message.tags == 'warning' %}bg-amber-50 border border-amber-200 text-amber-700
+            {% else %}bg-sky-50 border border-sky-200 text-sky-700{% endif %}">
+            {{ message }}
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    <!-- Search -->
+    <form method="GET" action="{% url 'deposit_search' %}" class="bg-white dark:bg-slate-800 border border-blue-200 dark:border-slate-700 rounded-2xl shadow-sm p-5 mb-6">
+        <label for="phone" class="block text-xs uppercase tracking-wide text-slate-400 dark:text-slate-500 mb-1">Customer phone number</label>
+        <div class="flex flex-col sm:flex-row gap-3">
+            <input type="tel" name="phone" id="phone" value="{{ phone }}" inputmode="numeric" autofocus
+                   placeholder="e.g. 9876543210"
+                   class="flex-1 rounded-lg border border-blue-200 dark:border-slate-700 px-3 py-2.5 text-sm text-slate-900 dark:text-slate-100 bg-white dark:bg-slate-900 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 transition">
+            <button type="submit" class="inline-flex items-center justify-center gap-2 bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-semibold px-5 py-2.5 rounded-lg shadow-lg shadow-indigo-600/20 transition">
+                <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke-width="1.7" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z" /></svg>
+                Search
+            </button>
+        </div>
+    </form>
+
+    <!-- Results -->
+    {% if searched %}
+        {% if customer %}
+        <div class="bg-white dark:bg-slate-800 border border-blue-200 dark:border-slate-700 rounded-2xl shadow-sm p-6">
+            <div class="flex items-center gap-3 mb-5">
+                <div class="h-11 w-11 rounded-full bg-indigo-500/10 text-indigo-500 dark:text-indigo-400 flex items-center justify-center text-lg font-bold flex-shrink-0">
+                    {{ customer.display_name|first|upper }}
+                </div>
+                <div>
+                    <p class="text-base font-bold text-slate-900 dark:text-slate-100">{{ customer.display_name }}</p>
+                    <p class="text-xs text-slate-500 dark:text-slate-400">{{ customer.phone }}</p>
+                </div>
+            </div>
+
+            <div class="rounded-xl border p-4 mb-5
+                {% if outstanding > 0 %}bg-rose-50 dark:bg-rose-500/10 border-rose-200 dark:border-rose-500/30{% else %}bg-emerald-50 dark:bg-emerald-500/10 border-emerald-200 dark:border-emerald-500/30{% endif %}">
+                <p class="text-[11px] uppercase tracking-wide {% if outstanding > 0 %}text-rose-500/80 dark:text-rose-400/80{% else %}text-emerald-600/80 dark:text-emerald-400/80{% endif %}">Outstanding balance</p>
+                <p class="text-3xl font-bold {% if outstanding > 0 %}text-rose-600 dark:text-rose-400{% else %}text-emerald-600 dark:text-emerald-400{% endif %} mt-1">₹{{ outstanding }}</p>
+            </div>
+
+            {% if outstanding > 0 %}
+            <form method="POST" action="{% url 'add_deposit' customer.pk %}">
+                {% csrf_token %}
+                <label for="amount" class="block text-xs uppercase tracking-wide text-slate-400 dark:text-slate-500 mb-1">Deposit amount (₹)</label>
+                <input type="number" name="amount" id="amount" min="0.01" max="{{ outstanding }}" step="0.01" required
+                       placeholder="0.00"
+                       class="w-full rounded-lg border border-blue-200 dark:border-slate-700 px-3 py-2.5 text-sm text-slate-900 dark:text-slate-100 bg-white dark:bg-slate-900 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 transition">
+                <p class="text-xs text-slate-400 dark:text-slate-500 mt-1.5">Cannot exceed the outstanding balance of ₹{{ outstanding }}.</p>
+
+                <label for="note" class="block text-xs uppercase tracking-wide text-slate-400 dark:text-slate-500 mb-1 mt-4">Note (optional)</label>
+                <input type="text" name="note" id="note" placeholder="e.g. paid in cash"
+                       class="w-full rounded-lg border border-blue-200 dark:border-slate-700 px-3 py-2.5 text-sm text-slate-900 dark:text-slate-100 bg-white dark:bg-slate-900 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 transition">
+
+                <button type="submit" class="w-full mt-5 inline-flex items-center justify-center gap-2 bg-emerald-600 hover:bg-emerald-500 text-white text-sm font-semibold px-5 py-3 rounded-xl shadow-lg shadow-emerald-600/20 transition">
+                    Record deposit
+                </button>
+            </form>
+            {% else %}
+            <p class="text-sm text-slate-500 dark:text-slate-400 text-center py-2">Nothing to collect — this customer is fully paid up.</p>
+            {% endif %}
+        </div>
+        {% else %}
+        <div class="bg-white dark:bg-slate-800 border border-blue-200 dark:border-slate-700 rounded-2xl p-10 text-center">
+            <p class="text-slate-500 dark:text-slate-400 text-sm">No customer found for "{{ phone }}".</p>
+        </div>
+        {% endif %}
+    {% endif %}
+</div>
+
+<script>
+    // Client-side guard: never let the entered amount exceed the outstanding max.
+    const amount = document.getElementById('amount');
+    if (amount) {
+        const max = parseFloat(amount.max);
+        amount.addEventListener('input', () => {
+            const v = parseFloat(amount.value);
+            if (!isNaN(v) && v > max) amount.value = max.toFixed(2);
+        });
+    }
+</script>
+{% endblock %}

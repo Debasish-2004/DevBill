@@ -1,0 +1,112 @@
+{% extends "employee_layout.html" %}
+
+{% block title %}Return — Bill #{{ bill.pk }}{% endblock %}
+
+{% block content %}
+<div class="max-w-3xl mx-auto">
+
+    <div class="flex items-center justify-between mb-6">
+        <div>
+            <h1 class="text-2xl font-bold text-slate-900 dark:text-slate-100">Return items</h1>
+            <p class="text-sm text-slate-500 dark:text-slate-400 mt-1">
+                Bill #{{ bill.pk }} · {{ bill.customer.display_name }} ({{ bill.customer.phone }}) · {{ bill.created_at|date:"d M Y" }}
+            </p>
+        </div>
+        <a href="{% url 'return_search' %}" class="text-sm font-medium text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 transition whitespace-nowrap">← Back</a>
+    </div>
+
+    <!-- Messages -->
+    {% if messages %}
+    <div class="mb-6 space-y-2">
+        {% for message in messages %}
+        <div class="px-4 py-3 rounded-lg text-sm font-medium
+            {% if message.tags == 'success' %}bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-200 dark:border-emerald-500/30 text-emerald-700 dark:text-emerald-400
+            {% elif message.tags == 'error' %}bg-rose-50 border border-rose-200 text-rose-700
+            {% elif message.tags == 'warning' %}bg-amber-50 border border-amber-200 text-amber-700
+            {% else %}bg-sky-50 border border-sky-200 text-sky-700{% endif %}">
+            {{ message }}
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    <form method="POST" action="{% url 'return_bill' bill.pk %}">
+        {% csrf_token %}
+
+        <div class="bg-white dark:bg-slate-800 border border-blue-200 dark:border-slate-700 rounded-2xl shadow-sm overflow-hidden">
+            <div class="hidden sm:grid grid-cols-12 gap-3 px-5 py-3 border-b border-blue-100 dark:border-slate-700 text-[11px] uppercase tracking-wide text-slate-400 dark:text-slate-500 font-semibold">
+                <div class="col-span-5">Product</div>
+                <div class="col-span-2 text-center">Sold</div>
+                <div class="col-span-2 text-center">Returned</div>
+                <div class="col-span-3 text-center">Return qty</div>
+            </div>
+
+            {% for row in rows %}
+            <div class="grid grid-cols-12 gap-3 items-center px-5 py-4 border-b border-blue-50 dark:border-slate-700/60 last:border-0">
+                <div class="col-span-12 sm:col-span-5">
+                    <p class="text-sm font-medium text-slate-800 dark:text-slate-100">{{ row.item.product_name }}</p>
+                    <p class="text-xs text-slate-400 dark:text-slate-500">₹{{ row.item.unit_price }} each</p>
+                </div>
+                <div class="col-span-4 sm:col-span-2 text-center">
+                    <span class="sm:hidden text-[11px] uppercase text-slate-400">Sold </span>
+                    <span class="text-sm text-slate-700 dark:text-slate-300">{{ row.item.quantity }}</span>
+                </div>
+                <div class="col-span-4 sm:col-span-2 text-center">
+                    <span class="sm:hidden text-[11px] uppercase text-slate-400">Returned </span>
+                    <span class="text-sm {% if row.returned %}text-amber-600 dark:text-amber-400{% else %}text-slate-400 dark:text-slate-500{% endif %}">{{ row.returned }}</span>
+                </div>
+                <div class="col-span-4 sm:col-span-3 flex justify-center">
+                    {% if row.returnable > 0 %}
+                    <input type="number" name="return_qty_{{ row.item.pk }}" min="0" max="{{ row.returnable }}" value="0"
+                           data-price="{{ row.item.unit_price }}" data-return-input
+                           class="w-20 rounded-lg border border-blue-200 dark:border-slate-700 px-2 py-1.5 text-sm text-center text-slate-900 dark:text-slate-100 bg-white dark:bg-slate-900 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 transition">
+                    {% else %}
+                    <span class="text-xs font-medium text-slate-400 dark:text-slate-500">Fully returned</span>
+                    {% endif %}
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+
+        <!-- Reason + summary -->
+        <div class="mt-6 grid grid-cols-1 lg:grid-cols-5 gap-6">
+            <div class="lg:col-span-3">
+                <label for="reason" class="block text-xs uppercase tracking-wide text-slate-400 dark:text-slate-500 mb-1">Reason (optional)</label>
+                <textarea name="reason" id="reason" rows="3" placeholder="e.g. damaged, wrong item, customer changed mind"
+                          class="w-full rounded-lg border border-blue-200 dark:border-slate-700 px-3 py-2.5 text-sm text-slate-900 dark:text-slate-100 bg-white dark:bg-slate-900 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 transition"></textarea>
+            </div>
+            <div class="lg:col-span-2">
+                <div class="bg-white dark:bg-slate-800 border border-blue-200 dark:border-slate-700 rounded-2xl shadow-sm p-5">
+                    <div class="flex justify-between items-baseline">
+                        <span class="text-sm font-semibold text-slate-800 dark:text-slate-200">Refund total</span>
+                        <span class="text-2xl font-bold text-rose-600 dark:text-rose-400" id="refund-total">₹0.00</span>
+                    </div>
+                    <button type="submit" class="w-full mt-5 inline-flex items-center justify-center gap-2 bg-rose-600 hover:bg-rose-500 text-white text-sm font-semibold px-5 py-3 rounded-xl shadow-lg shadow-rose-600/20 transition">
+                        Confirm return
+                    </button>
+                </div>
+            </div>
+        </div>
+    </form>
+</div>
+
+<script>
+    const inputs = document.querySelectorAll('[data-return-input]');
+    const totalEl = document.getElementById('refund-total');
+
+    function refresh() {
+        let total = 0;
+        inputs.forEach(inp => {
+            let qty = parseInt(inp.value, 10);
+            const max = parseInt(inp.max, 10);
+            if (isNaN(qty) || qty < 0) qty = 0;
+            if (qty > max) { qty = max; inp.value = max; }
+            total += qty * parseFloat(inp.dataset.price);
+        });
+        totalEl.textContent = '₹' + total.toFixed(2);
+    }
+
+    inputs.forEach(inp => inp.addEventListener('input', refresh));
+    refresh();
+</script>
+{% endblock %}

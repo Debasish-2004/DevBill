@@ -50,7 +50,8 @@
                         Billing
                         {% if bill_count %}<span class="absolute -top-1 -right-1 inline-flex items-center justify-center h-5 min-w-[1.25rem] px-1 rounded-full bg-white text-blue-700 text-[11px] font-bold">{{ bill_count }}</span>{% endif %}
                     </a>
-                    <a href="#" class="text-sm font-medium text-blue-100 hover:text-white px-3 py-2 rounded-md hover:bg-blue-600 transition">Return</a>
+                    <a href="{% url 'return_search' %}" class="text-sm font-medium text-blue-100 hover:text-white px-3 py-2 rounded-md hover:bg-blue-600 transition">Return</a>
+                    <a href="{% url 'deposit_search' %}" class="text-sm font-medium text-blue-100 hover:text-white px-3 py-2 rounded-md hover:bg-blue-600 transition">Deposit</a>
                     <button type="button" data-theme-toggle title="Toggle dark mode" aria-label="Toggle dark mode"
                             class="inline-flex items-center justify-center h-9 w-9 rounded-md text-blue-100 hover:text-white hover:bg-blue-600 dark:hover:bg-slate-800 transition">
                         <svg data-theme-icon-light class="h-5 w-5 hidden dark:block" fill="none" viewBox="0 0 24 24" stroke-width="1.7" stroke="currentColor">
@@ -105,7 +106,8 @@
                     <nav class="space-y-2">
                         <a href="{% url 'product_categories' %}" class="block text-base font-medium text-slate-700 dark:text-slate-200 hover:text-white hover:bg-blue-600 px-3 py-2.5 rounded-lg transition">Products</a>
                         <a href="{% url 'billing' %}" class="block text-base font-medium text-slate-700 dark:text-slate-200 hover:text-white hover:bg-blue-600 px-3 py-2.5 rounded-lg transition">Billing{% if bill_count %} <span class="ml-1 text-xs font-semibold text-blue-700 dark:text-blue-400">({{ bill_count }})</span>{% endif %}</a>
-                        <a href="#" class="block text-base font-medium text-slate-700 dark:text-slate-200 hover:text-white hover:bg-blue-600 px-3 py-2.5 rounded-lg transition">Return</a>
+                        <a href="{% url 'return_search' %}" class="block text-base font-medium text-slate-700 dark:text-slate-200 hover:text-white hover:bg-blue-600 px-3 py-2.5 rounded-lg transition">Return</a>
+                        <a href="{% url 'deposit_search' %}" class="block text-base font-medium text-slate-700 dark:text-slate-200 hover:text-white hover:bg-blue-600 px-3 py-2.5 rounded-lg transition">Deposit</a>
                         <hr class="border-slate-200 dark:border-slate-700 my-2">
                         <a href="{% url 'owner_home' %}" class="block text-base font-semibold text-white bg-blue-700 hover:bg-blue-600 px-3 py-2.5 rounded-lg transition">Owner</a>
                     </nav>

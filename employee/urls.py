@@ -19,4 +19,12 @@ urlpatterns = [
     path("billing/update/", views.update_bill, name="update_bill"),
     path("checkout/", views.checkout, name="checkout"),
     path("receipt/<int:bill_id>/", views.receipt, name="receipt"),
+
+    # Returns
+    path("returns/", views.return_search, name="return_search"),
+    path("returns/bill/<int:bill_id>/", views.return_bill, name="return_bill"),
+
+    # Deposits (collect outstanding)
+    path("deposit/", views.deposit_search, name="deposit_search"),
+    path("deposit/<int:customer_id>/add/", views.add_deposit, name="add_deposit"),
 ]

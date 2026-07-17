@@ -18,8 +18,10 @@ from django.contrib import admin
 from django.urls import path, include
 from django.conf import settings
 from django.conf.urls.static import static
+from employee import views as employee_views
 
 urlpatterns = [
+    path('', employee_views.landing, name='landing'),
     path('admin/', admin.site.urls),
     path("employee/", include("employee.urls")),
     path("owner/", include("owner.urls")),

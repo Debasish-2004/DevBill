@@ -26,7 +26,7 @@
 
                 <div class="flex-shrink-0">
                     <a href="{% url 'employee_home' %}" class="text-xl font-bold tracking-tight text-white">
-                       Lingara Sanitary
+                       Lingaraj Sanitary
                     </a>
                 </div>
 
@@ -179,6 +179,31 @@
                 try { localStorage.setItem('theme', isDark ? 'dark' : 'light'); } catch (e) {}
             });
         });
+
+        // ── Idle redirect back to landing page ──────
+        const IDLE_TIMEOUT_MS = 30000;
+        let idleTimer = null;
+
+        function resetIdleTimer() {
+            if (idleTimer) {
+                clearTimeout(idleTimer);
+            }
+
+            idleTimer = setTimeout(() => {
+                try {
+                    const currentUrl = window.location.pathname + window.location.search + window.location.hash;
+                    sessionStorage.setItem('devbill_last_employee_url', currentUrl);
+                } catch (e) {}
+
+                window.location.href = "{% url 'landing' %}";
+            }, IDLE_TIMEOUT_MS);
+        }
+
+        ['mousemove', 'keydown', 'click', 'scroll', 'touchstart', 'touchmove', 'pointerdown', 'pointermove'].forEach((eventName) => {
+            document.addEventListener(eventName, resetIdleTimer, { passive: true });
+        });
+
+        resetIdleTimer();
 
         // ── Product search autocomplete ──────────────
         const SEARCH_URL = "{% url 'search_products' %}";

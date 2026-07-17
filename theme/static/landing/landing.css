@@ -1,0 +1,198 @@
+/* ═══════════════════════════════════════════════════════════════
+   DEVBILL · Landing experience
+   Layers (back → front):
+     .aurora        CSS gradient aurora (GPU-cheap, blurred blobs)
+     #scene-canvas  Three.js world
+     .hud           Typography
+     .cursor-*      Pointer spotlight
+     .fade-veil     Cinematic black veil for reveal / enter transition
+   ═══════════════════════════════════════════════════════════════ */
+
+:root {
+    --bg: #04060D;
+    --blue: #3B82F6;
+    --purple: #8B5CF6;
+    --cyan: #22D3EE;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+html, body {
+    height: 100%;
+    overflow: hidden;
+    background: var(--bg);
+    /* the pointer is replaced by the spotlight */
+    cursor: none;
+    -webkit-user-select: none;
+    user-select: none;
+    font-family: "SF Pro Display", "Segoe UI", system-ui, -apple-system, sans-serif;
+}
+
+/* ── Aurora ─────────────────────────────────────────────────────
+   Three huge blurred radial blobs drifting extremely slowly.
+   Cheaper than any shader and completely composited on the GPU. */
+.aurora {
+    position: fixed;
+    inset: 0;
+    z-index: 0;
+    overflow: hidden;
+    filter: blur(90px) saturate(120%);
+}
+
+.aurora__blob {
+    position: absolute;
+    width: 55vmax;
+    height: 55vmax;
+    border-radius: 50%;
+    opacity: 0.16;
+    will-change: transform;
+}
+
+.aurora__blob--blue {
+    background: radial-gradient(circle, var(--blue), transparent 65%);
+    top: -18vmax; left: -12vmax;
+    animation: drift-a 46s ease-in-out infinite alternate;
+}
+
+.aurora__blob--purple {
+    background: radial-gradient(circle, var(--purple), transparent 65%);
+    bottom: -22vmax; right: -14vmax;
+    animation: drift-b 58s ease-in-out infinite alternate;
+}
+
+.aurora__blob--cyan {
+    background: radial-gradient(circle, var(--cyan), transparent 65%);
+    top: 30%; left: 42%;
+    width: 34vmax; height: 34vmax;
+    opacity: 0.10;
+    animation: drift-c 52s ease-in-out infinite alternate;
+}
+
+@keyframes drift-a { to { transform: translate(9vmax, 7vmax) scale(1.12); } }
+@keyframes drift-b { to { transform: translate(-8vmax, -6vmax) scale(1.08); } }
+@keyframes drift-c { to { transform: translate(-6vmax, 5vmax) scale(0.92); } }
+
+/* ── Three.js canvas ──────────────────────────────────────────── */
+#scene-canvas {
+    position: fixed;
+    inset: 0;
+    z-index: 1;
+    display: block;
+}
+
+/* ── HUD typography ───────────────────────────────────────────── */
+.hud {
+    position: fixed;
+    inset: 0;
+    z-index: 2;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    pointer-events: none;   /* clicks pass through to the page */
+}
+
+.hud__title {
+    font-size: clamp(3.4rem, 10vw, 7.5rem);
+    font-weight: 800;
+    letter-spacing: 0.24em;
+    margin-left: 0.24em;    /* optically recentre the tracking */
+    color: #EAF2FF;
+    text-shadow:
+        0 0 18px rgba(59, 130, 246, 0.55),
+        0 0 60px rgba(139, 92, 246, 0.30),
+        0 0 120px rgba(34, 211, 238, 0.18);
+    opacity: 0;             /* revealed by GSAP */
+}
+
+.hud__subtitle {
+    margin-top: 0.9rem;
+    font-size: clamp(0.8rem, 2vw, 1.05rem);
+    font-weight: 300;
+    letter-spacing: 0.52em;
+    margin-left: 0.52em;
+    text-transform: uppercase;
+    color: rgba(176, 198, 232, 0.72);
+    opacity: 0;
+}
+
+.hud__hint {
+    position: absolute;
+    bottom: 7vh;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    align-items: center;
+    gap: 0.8rem;
+    font-size: 0.72rem;
+    font-weight: 400;
+    letter-spacing: 0.3em;
+    text-transform: uppercase;
+    color: rgba(148, 173, 214, 0.55);
+    white-space: nowrap;
+    opacity: 0;
+}
+
+.hud__hint-or { opacity: 0.5; letter-spacing: 0.1em; }
+
+.hud__hint kbd {
+    font-family: inherit;
+    font-size: 0.68rem;
+    padding: 0.18rem 0.5rem;
+    border: 1px solid rgba(96, 140, 210, 0.35);
+    border-radius: 6px;
+    background: rgba(59, 130, 246, 0.08);
+    color: rgba(190, 214, 250, 0.8);
+    box-shadow: 0 0 12px rgba(59, 130, 246, 0.18);
+}
+
+/* ── Cursor spotlight ─────────────────────────────────────────── */
+.cursor-glow {
+    position: fixed;
+    z-index: 3;
+    width: 360px;
+    height: 360px;
+    margin: -180px 0 0 -180px;   /* centre on the pointer */
+    border-radius: 50%;
+    pointer-events: none;
+    background: radial-gradient(circle,
+        rgba(59, 130, 246, 0.14) 0%,
+        rgba(34, 211, 238, 0.05) 40%,
+        transparent 70%);
+    will-change: transform;
+}
+
+.cursor-dot {
+    position: fixed;
+    z-index: 3;
+    width: 7px;
+    height: 7px;
+    margin: -3.5px 0 0 -3.5px;
+    border-radius: 50%;
+    pointer-events: none;
+    background: #BFDBFE;
+    box-shadow: 0 0 10px rgba(59, 130, 246, 0.9), 0 0 26px rgba(34, 211, 238, 0.5);
+    will-change: transform;
+}
+
+/* touch devices: no custom cursor */
+@media (hover: none) {
+    html, body { cursor: auto; }
+    .cursor-glow, .cursor-dot { display: none; }
+}
+
+/* ── Fade veil ────────────────────────────────────────────────── */
+.fade-veil {
+    position: fixed;
+    inset: 0;
+    z-index: 4;
+    background: var(--bg);
+    pointer-events: none;
+    opacity: 1;             /* page starts black, GSAP fades it in */
+}
+
+/* respect users who prefer no motion */
+@media (prefers-reduced-motion: reduce) {
+    .aurora__blob { animation: none; }
+}

@@ -1,0 +1,54 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LINGARAJ SANITARY</title>
+    <link rel="stylesheet" href="{% static 'landing/landing.css' %}">
+</head>
+
+<!--
+    LINGARAJ SANITARY — immersive landing experience for a pipe and hardware fittings shop.
+    data-target carries the URL the transition flies into (employee dashboard).
+-->
+<body id="devbill-landing" data-target="{% url 'employee_home' %}">
+
+    <!-- ── Layer 0 · CSS Aurora (cheapest possible aurora: blurred gradient blobs) ── -->
+    <div class="aurora" aria-hidden="true">
+        <div class="aurora__blob aurora__blob--blue"></div>
+        <div class="aurora__blob aurora__blob--purple"></div>
+        <div class="aurora__blob aurora__blob--cyan"></div>
+    </div>
+
+    <!-- ── Layer 1 · Three.js scene ── -->
+    <canvas id="scene-canvas" aria-hidden="true"></canvas>
+
+    <!-- ── Layer 2 · Typography (the only text on the page) ── -->
+    <main class="hud">
+        <h1 class="hud__title" id="hud-title">LINGARAJ SANITARY</h1>
+        <p class="hud__subtitle" id="hud-subtitle">Pipe &amp; Hardware Fittings</p>
+        <p class="hud__hint" id="hud-hint">
+            <span>Double-click anywhere</span>
+            <span class="hud__hint-or">or</span>
+            <span>Press <kbd>ENTER</kbd></span>
+        </p>
+    </main>
+
+    <!-- ── Layer 3 · Cursor spotlight (trails the pointer) ── -->
+    <div class="cursor-glow" id="cursor-glow" aria-hidden="true"></div>
+    <div class="cursor-dot" id="cursor-dot" aria-hidden="true"></div>
+
+    <!-- ── Layer 4 · Cinematic fade used for enter-transition & first reveal ── -->
+    <div class="fade-veil" id="fade-veil" aria-hidden="true"></div>
+
+    <!-- Vendored libs — no CDN so the page works offline inside the shop -->
+    <script src="{% static 'landing/assets/vendor/three.min.js' %}"></script>
+    <script src="{% static 'landing/assets/vendor/gsap.min.js' %}"></script>
+
+    <!-- Modular page code -->
+    <script src="{% static 'landing/scene.js' %}"></script>
+    <script src="{% static 'landing/animations.js' %}"></script>
+    <script src="{% static 'landing/interactions.js' %}"></script>
+</body>
+</html>

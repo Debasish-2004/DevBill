@@ -15,6 +15,15 @@ from owner.models import (
 
 
 # ─────────────────────────────────────────────
+# LANDING
+# ─────────────────────────────────────────────
+
+def landing(request):
+    """Render the immersive landing experience for the retail billing app."""
+    return render(request, "landing.html")
+
+
+# ─────────────────────────────────────────────
 # HOME
 # ─────────────────────────────────────────────
 
